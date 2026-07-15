@@ -1,3 +1,10 @@
+# [1.1.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.0.0...v1.1.0) (2026-07-15)
+
+
+### Features
+
+* ajout du build et de la publication des images Docker vers le registre GitLab ([1e2ea7a](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/1e2ea7a13b286437bfae2a9972d46dce5473a548))
+
 # 1.0.0 (2026-07-15)
 
 
