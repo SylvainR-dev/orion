@@ -1,3 +1,10 @@
+# [1.4.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.3.0...v1.4.0) (2026-07-15)
+
+
+### Features
+
+* ajout du scan de sécurité Trivy avant publication des images ([f31c63a](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/f31c63a3ff0ccb6e3518c34bf35279b24c23e185))
+
 # [1.3.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.2.1...v1.3.0) (2026-07-15)
 
 
