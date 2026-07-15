@@ -1,6 +1,11 @@
+variables:
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+  GIT_DEPTH: "0"
+
 stages:
   - version
   - test
+  - quality
   - build
   - publish
 
@@ -32,6 +37,20 @@ test-back:
   script:
     - cd back
     - ./gradlew test
+
+sonarqube-back:
+  stage: quality
+  image: gradle:jdk17
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - cd back
+    - gradle sonarqube
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 build-front:
   image: node

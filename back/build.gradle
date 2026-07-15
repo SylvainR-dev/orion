@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '3.2.5'
 	id 'io.spring.dependency-management' version '1.1.4'
 	id 'com.adarshr.test-logger' version '4.0.0'
+	id 'org.sonarqube' version '7.3.1.8318'
 }
 
 group = 'com.openclassroom.devops.orion'
@@ -18,7 +19,6 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-data-rest'
 	implementation 'ro.polak:spring-boot-data-fixtures:0.2.0'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -27,5 +27,12 @@ dependencies {
 }
 
 test {
-    useJUnitPlatform()
+	useJUnitPlatform()
+}
+
+sonar {
+	properties {
+		property "sonar.projectKey", "sylvainr-dev-group_projet-6-demarche-devops"
+		property "sonar.organization", "sylvainr-dev-group"
+	}
 }
