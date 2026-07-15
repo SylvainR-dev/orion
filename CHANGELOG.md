@@ -1,3 +1,10 @@
+## [1.2.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.2.0...v1.2.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* correction de la commande gradle pour le job SonarQube (usage du wrapper) ([dfa9a4e](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/dfa9a4e6fb5f7a4f229f6b9f21e16aea56921acc))
+
 # [1.2.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.1.0...v1.2.0) (2026-07-15)
 
 
