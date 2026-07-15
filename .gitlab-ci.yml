@@ -103,7 +103,7 @@ publish-images:
         exit 0
       fi
     - apk add --no-cache curl
-    - curl -sSL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+    - curl -fsSL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_linux-amd64.tar.gz"
     - tar zxvf trivy.tar.gz -C /usr/local/bin trivy
     - rm trivy.tar.gz
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
