@@ -1,3 +1,10 @@
+## [1.4.3](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.2...v1.4.3) (2026-07-15)
+
+
+### Bug Fixes
+
+* utilisation de l'image Docker officielle Trivy pour fiabiliser le scan ([1871629](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/1871629f5c88077ffb268a99b0794c8021fdb716))
+
 ## [1.4.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.1...v1.4.2) (2026-07-15)
 
 
