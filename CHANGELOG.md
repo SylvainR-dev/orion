@@ -1,3 +1,10 @@
+## [1.4.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.1...v1.4.2) (2026-07-15)
+
+
+### Bug Fixes
+
+* correction du nom du binaire Trivy (convention linux-amd64) ([38e7056](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/38e705611c934dac82a90f022251fe5918105466))
+
 ## [1.4.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.0...v1.4.1) (2026-07-15)
 
 
