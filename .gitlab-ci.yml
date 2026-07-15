@@ -47,7 +47,7 @@ sonarqube-back:
       - .sonar/cache
   script:
     - cd back
-    - gradle sonarqube
+    - ./gradlew sonar
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
