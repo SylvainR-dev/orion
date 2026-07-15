@@ -102,23 +102,19 @@ publish-images:
         echo "Aucune nouvelle version détectée, skip du build d'images."
         exit 0
       fi
-    - apk add --no-cache curl
-    - curl -fsSL -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_linux-amd64.tar.gz"
-    - tar zxvf trivy.tar.gz -C /usr/local/bin trivy
-    - rm trivy.tar.gz
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
   script:
     - docker build --target front -t "$CI_REGISTRY_IMAGE/front:$VERSION" -t "$CI_REGISTRY_IMAGE/front:latest" .
-    - trivy image --exit-code 1 --severity CRITICAL "$CI_REGISTRY_IMAGE/front:$VERSION"
+    - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$CI_REGISTRY_IMAGE/front:$VERSION"
     - docker push "$CI_REGISTRY_IMAGE/front:$VERSION"
     - docker push "$CI_REGISTRY_IMAGE/front:latest"
 
     - docker build --target back -t "$CI_REGISTRY_IMAGE/back:$VERSION" -t "$CI_REGISTRY_IMAGE/back:latest" .
-    - trivy image --exit-code 1 --severity CRITICAL "$CI_REGISTRY_IMAGE/back:$VERSION"
+    - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$CI_REGISTRY_IMAGE/back:$VERSION"
     - docker push "$CI_REGISTRY_IMAGE/back:$VERSION"
     - docker push "$CI_REGISTRY_IMAGE/back:latest"
 
     - docker build --target standalone -t "$CI_REGISTRY_IMAGE/standalone:$VERSION" -t "$CI_REGISTRY_IMAGE/standalone:latest" .
-    - trivy image --exit-code 1 --severity CRITICAL "$CI_REGISTRY_IMAGE/standalone:$VERSION"
+    - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$CI_REGISTRY_IMAGE/standalone:$VERSION"
     - docker push "$CI_REGISTRY_IMAGE/standalone:$VERSION"
     - docker push "$CI_REGISTRY_IMAGE/standalone:latest"
