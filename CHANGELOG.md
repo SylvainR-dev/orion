@@ -1,3 +1,10 @@
+## [1.4.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.0...v1.4.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* téléchargement direct du binaire Trivy pour fiabiliser l'installation ([e4ebddb](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/e4ebddb3fd8bd807bf179387a88d41e388408955))
+
 # [1.4.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.3.0...v1.4.0) (2026-07-15)
 
 
