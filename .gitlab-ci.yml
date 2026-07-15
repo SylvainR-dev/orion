@@ -1,6 +1,20 @@
 stages:
+  - version
   - test
   - build
+
+version:
+  stage: version
+  image: node:20
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  before_script:
+    - npm ci
+  script:
+    - npx semantic-release
+  artifacts:
+    reports:
+      dotenv: version.env
 
 test-front:
   image: cypress/browsers:latest
