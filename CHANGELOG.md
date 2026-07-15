@@ -1,3 +1,10 @@
+# [1.2.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.1.0...v1.2.0) (2026-07-15)
+
+
+### Features
+
+* intégration de SonarQube Cloud pour l'analyse du backend ([ddc0900](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/ddc09009dee43f4d754c78c4b8b1868c6e8442c0))
+
 # [1.1.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.0.0...v1.1.0) (2026-07-15)
 
 
