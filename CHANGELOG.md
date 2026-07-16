@@ -1,3 +1,10 @@
+## [1.4.5](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.4...v1.4.5) (2026-07-16)
+
+
+### Bug Fixes
+
+* mise à jour de Tomcat vers 10.1.55 pour corriger 3 CVE critiques additionnelles (CVE-2026-41293, CVE-2026-43512, CVE-2026-43515) ([8312981](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/83129810a8e5d0a1f6d36f4b3986bb42e30545c3))
+
 ## [1.4.4](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.3...v1.4.4) (2026-07-16)
 
 
