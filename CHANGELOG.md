@@ -1,3 +1,10 @@
+## [1.4.4](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.3...v1.4.4) (2026-07-16)
+
+
+### Bug Fixes
+
+* mise à jour de Tomcat embarqué pour corriger 4 CVE critiques (CVE-2025-24813, CVE-2026-41293, CVE-2026-43512, CVE-2026-43515) ([934cdfe](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/934cdfeb9c6a3cbb789b5b3a7dc6546c7d12063f))
+
 ## [1.4.3](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.2...v1.4.3) (2026-07-15)
 
 
