@@ -1,9 +1,13 @@
 ---
-- name: Déploiement de l'application MicroCRM sur l'environnement de démonstration
+- name: Déploiement de l'application MicroCRM avec validation et rollback automatique
   hosts: demo
   vars:
     registry: "registry.gitlab.com/sylvainr-dev-group/projet-6-demarche-devops"
     app_version: "{{ version }}"
+    version_file: "/home/deploy/.microcrm_current_version"
+    health_check_url: "http://localhost:8080/"
+    health_check_retries: 10
+    health_check_delay: 3
 
   tasks:
     - name: Connexion au registre GitLab Container Registry
@@ -12,7 +16,17 @@
         username: "{{ registry_user }}"
         password: "{{ registry_password }}"
 
-    - name: Tirer l'image standalone taguée avec la version
+    - name: Lire la version actuellement déployée (si connue)
+      ansible.builtin.slurp:
+        src: "{{ version_file }}"
+      register: previous_version_raw
+      ignore_errors: true
+
+    - name: Définir la version précédente
+      ansible.builtin.set_fact:
+        previous_version: "{{ (previous_version_raw.content | b64decode | trim) if not previous_version_raw.failed else '' }}"
+
+    - name: Tirer l'image standalone taguée avec la nouvelle version
       community.docker.docker_image:
         name: "{{ registry }}/standalone:{{ app_version }}"
         source: pull
@@ -39,6 +53,49 @@
           - "443:443"
           - "8080:8080"
 
+    - name: Vérifier que l'application répond (contrôle de santé)
+      ansible.builtin.command: curl -sf -o /dev/null -w "%{http_code}" {{ health_check_url }}
+      register: health_check
+      retries: "{{ health_check_retries }}"
+      delay: "{{ health_check_delay }}"
+      until: health_check.rc == 0
+      ignore_errors: true
+      changed_when: false
+
+    - name: Bloc de rollback si le contrôle de santé a échoué
+      when: health_check.rc != 0
+      block:
+        - name: Consigner l'échec du déploiement
+          ansible.builtin.debug:
+            msg: "Le déploiement de la version {{ app_version }} a échoué la validation. Rollback vers la version {{ previous_version }}."
+
+        - name: Arrêter et supprimer le conteneur défaillant
+          community.docker.docker_container:
+            name: microcrm-app
+            state: absent
+
+        - name: Redémarrer la version précédente (rollback)
+          community.docker.docker_container:
+            name: microcrm-app
+            image: "{{ registry }}/standalone:{{ previous_version }}"
+            state: started
+            restart_policy: unless-stopped
+            published_ports:
+              - "80:80"
+              - "443:443"
+              - "8080:8080"
+          when: previous_version != ""
+
+        - name: Échec du déploiement - rollback effectué
+          ansible.builtin.fail:
+            msg: "Déploiement de la version {{ app_version }} annulé après échec du contrôle de santé. Rollback vers {{ previous_version }} effectué."
+
+    - name: Enregistrer la nouvelle version comme version stable actuelle
+      ansible.builtin.copy:
+        content: "{{ app_version }}"
+        dest: "{{ version_file }}"
+      when: health_check.rc == 0
+
     - name: Nettoyer les images obsolètes (ne conserver que les 3 dernières versions)
       ansible.builtin.shell: |
         docker images "{{ registry }}/standalone" --format "{{ '{{' }}.Tag{{ '}}' }}" \
@@ -47,3 +104,4 @@
           | tail -n +4 \
           | xargs -r -I {} docker rmi "{{ registry }}/standalone:{}"
       changed_when: false
+      when: health_check.rc == 0
