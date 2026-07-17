@@ -138,4 +138,4 @@ deploy:
       fi
   script:
     - cd ansible
-    - ansible-playbook -i inventory.ini deploy.yml -e "registry_user=$CI_REGISTRY_USER_DEPLOY" -e "registry_password=$CI_REGISTRY_PASSWORD_DEPLOY" -e "version=$VERSION"
+    - ansible-playbook -i inventory.ini deploy.yml -e "registry_user=$DEPLOY_REGISTRY_USER" -e "registry_password=$DEPLOY_REGISTRY_TOKEN" -e "version=$VERSION"
