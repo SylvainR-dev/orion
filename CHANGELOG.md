@@ -1,3 +1,10 @@
+# [1.6.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.5.2...v1.6.0) (2026-07-17)
+
+
+### Features
+
+* ajout de la validation post-déploiement et du rollback automatique ([18647de](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/18647dea9cb412139ef0c90ddb1ba2ec070f0b0d))
+
 ## [1.5.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.5.1...v1.5.2) (2026-07-17)
 
 
