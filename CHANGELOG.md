@@ -1,3 +1,10 @@
+## [1.5.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.5.0...v1.5.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* correction des noms de variables pour l'authentification registre dans le job deploy ([be80eb9](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/be80eb9813fc510bbd56013c3028946efedb08e7))
+
 # [1.5.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.5...v1.5.0) (2026-07-17)
 
 
