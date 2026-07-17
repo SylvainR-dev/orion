@@ -1,3 +1,10 @@
+# [1.5.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.5...v1.5.0) (2026-07-17)
+
+
+### Features
+
+* ajout du déploiement automatisé via Ansible sur l'environnement de démonstration ([0d129be](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/0d129be8352bc68c54578d8f16e7665641545230))
+
 ## [1.4.5](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.4...v1.4.5) (2026-07-16)
 
 
