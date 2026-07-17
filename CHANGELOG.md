@@ -1,3 +1,10 @@
+## [1.5.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.5.1...v1.5.2) (2026-07-17)
+
+
+### Bug Fixes
+
+* chemin absolu de la clé SSH pour le déploiement via le runner CI ([58fb462](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/58fb462b1c94ba3e429f0aab23c7a69cf5ce1e81))
+
 ## [1.5.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.5.0...v1.5.1) (2026-07-17)
 
 
