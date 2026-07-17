@@ -8,6 +8,7 @@ stages:
   - quality
   - build
   - publish
+  - deploy
 
 version:
   stage: version
@@ -118,3 +119,23 @@ publish-images:
     - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$CI_REGISTRY_IMAGE/standalone:$VERSION"
     - docker push "$CI_REGISTRY_IMAGE/standalone:$VERSION"
     - docker push "$CI_REGISTRY_IMAGE/standalone:latest"
+
+deploy:
+  stage: deploy
+  tags:
+    - local-deploy
+  needs:
+    - job: version
+      artifacts: true
+    - job: publish-images
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  before_script:
+    - |
+      if [ -z "$VERSION" ]; then
+        echo "Aucune nouvelle version détectée, skip du déploiement."
+        exit 0
+      fi
+  script:
+    - cd ansible
+    - ansible-playbook -i inventory.ini deploy.yml -e "registry_user=$CI_REGISTRY_USER_DEPLOY" -e "registry_password=$CI_REGISTRY_PASSWORD_DEPLOY" -e "version=$VERSION"

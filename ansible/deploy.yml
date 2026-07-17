@@ -1,0 +1,49 @@
+---
+- name: Déploiement de l'application MicroCRM sur l'environnement de démonstration
+  hosts: demo
+  vars:
+    registry: "registry.gitlab.com/sylvainr-dev-group/projet-6-demarche-devops"
+    app_version: "{{ version }}"
+
+  tasks:
+    - name: Connexion au registre GitLab Container Registry
+      community.docker.docker_login:
+        registry_url: "registry.gitlab.com"
+        username: "{{ registry_user }}"
+        password: "{{ registry_password }}"
+
+    - name: Tirer l'image standalone taguée avec la version
+      community.docker.docker_image:
+        name: "{{ registry }}/standalone:{{ app_version }}"
+        source: pull
+
+    - name: Vérifier si un conteneur de l'application est déjà en cours d'exécution
+      community.docker.docker_container_info:
+        name: microcrm-app
+      register: existing_container
+
+    - name: Arrêter et supprimer l'ancien conteneur s'il existe
+      community.docker.docker_container:
+        name: microcrm-app
+        state: absent
+      when: existing_container.exists
+
+    - name: Démarrer le nouveau conteneur avec la version déployée
+      community.docker.docker_container:
+        name: microcrm-app
+        image: "{{ registry }}/standalone:{{ app_version }}"
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "80:80"
+          - "443:443"
+          - "8080:8080"
+
+    - name: Nettoyer les images obsolètes (ne conserver que les 3 dernières versions)
+      ansible.builtin.shell: |
+        docker images "{{ registry }}/standalone" --format "{{ '{{' }}.Tag{{ '}}' }}" \
+          | grep -v latest \
+          | sort -rV \
+          | tail -n +4 \
+          | xargs -r -I {} docker rmi "{{ registry }}/standalone:{}"
+      changed_when: false
