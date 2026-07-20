@@ -1,0 +1,27 @@
+# Docker Compose - Orion (test local des conteneurs, Étape 1 Partie 2)
+# Dockerfile unique à la racine, targets: front-build, back-build, front, back, standalone
+#
+# NOTE : le backend utilise HSQLDB embarqué (aucun driver PostgreSQL présent dans
+# build.gradle à ce stade), donc pas de service "db" ici. Le passage à une vraie base
+# PostgreSQL sera à traiter avec l'infra AWS (ajout du driver + config datasource).
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: back
+    container_name: orion-backend
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: front
+    container_name: orion-frontend
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
