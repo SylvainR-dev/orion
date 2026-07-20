@@ -1,3 +1,10 @@
+# [1.7.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.6.0...v1.7.0) (2026-07-20)
+
+
+### Features
+
+* **docker:** ajoute docker-compose de test local et corrige l'auto-HTTPS du Caddyfile ([3e44eb8](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/3e44eb83e252d6a41bae60a616239dcc9bc9d766))
+
 # [1.6.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.5.2...v1.6.0) (2026-07-17)
 
 
