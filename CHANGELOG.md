@@ -1,3 +1,10 @@
+# [1.8.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.7.0...v1.8.0) (2026-07-21)
+
+
+### Features
+
+* **terraform:** provisionne le cluster EKS via Terraform ([ef31241](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/ef31241d97d7354668724e25eb5f4e848832f931))
+
 # [1.7.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.6.0...v1.7.0) (2026-07-20)
 
 
