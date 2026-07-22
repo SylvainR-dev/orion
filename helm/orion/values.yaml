@@ -1,0 +1,40 @@
+# Valeurs par défaut du chart Orion.
+# Surchargées en CI via --set backend.tag=$VERSION front.tag=$VERSION (ou un values-prod.yaml dédié).
+
+namespace: orion
+
+imageRegistry: registry.gitlab.com/sylvainr-dev-group/projet-6-demarche-devops
+imagePullSecretName: gitlab-registry-secret
+
+backend:
+  image: back
+  tag: latest
+  replicas: 1
+  port: 8080
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+  # Actuator absent des dépendances backend : probes en tcpSocket, pas httpGet.
+  probes:
+    initialDelaySeconds: 20
+    periodSeconds: 10
+
+frontend:
+  image: front
+  tag: latest
+  replicas: 1
+  port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+  probes:
+    initialDelaySeconds: 5
+    periodSeconds: 10
