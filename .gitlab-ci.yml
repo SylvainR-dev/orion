@@ -8,6 +8,7 @@ stages:
   - quality
   - build
   - publish
+  - deploy
 
 version:
   stage: version
@@ -118,3 +119,27 @@ publish-images:
     - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$CI_REGISTRY_IMAGE/standalone:$VERSION"
     - docker push "$CI_REGISTRY_IMAGE/standalone:$VERSION"
     - docker push "$CI_REGISTRY_IMAGE/standalone:latest"
+
+deploy:
+  stage: deploy
+  image: alpine/k8s:1.30.2
+  needs:
+    - job: version
+      artifacts: true
+    - job: publish-images
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  before_script:
+    - |
+      if [ -z "$VERSION" ]; then
+        echo "Aucune nouvelle version détectée, skip du déploiement."
+        exit 0
+      fi
+    - aws eks update-kubeconfig --region eu-west-3 --name orion-eks
+  script:
+    - >
+      helm upgrade --install orion helm/orion/
+      --namespace orion
+      --set backend.tag="$VERSION"
+      --set frontend.tag="$VERSION"
+      --wait --timeout 5m
