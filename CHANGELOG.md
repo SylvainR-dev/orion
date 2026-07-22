@@ -1,3 +1,10 @@
+# [1.9.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.8.0...v1.9.0) (2026-07-22)
+
+
+### Features
+
+* **k8s:** déploie front/back sur EKS via manifests Kubernetes bruts ([4cf3257](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/4cf3257797a22a9d0fd364ed4b615bf9b8c8fbfa))
+
 # [1.8.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.7.0...v1.8.0) (2026-07-21)
 
 
