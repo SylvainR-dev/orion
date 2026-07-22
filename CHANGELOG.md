@@ -1,3 +1,10 @@
+# [1.11.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.10.0...v1.11.0) (2026-07-22)
+
+
+### Features
+
+* **ansible:** playbook de bootstrap du cluster EKS ([e260cad](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/e260cad427d51c87fb130fafc2dc0e179055bfcb))
+
 # [1.10.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.9.0...v1.10.0) (2026-07-22)
 
 
