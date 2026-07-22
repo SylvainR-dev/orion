@@ -1,0 +1,71 @@
+---
+# Bootstrap du cluster EKS pour l'application Orion.
+#
+# Rôle d'Ansible ici : configuration "day-2" du cluster une fois provisionné par Terraform
+# (namespace applicatif, secret d'authentification au registre GitLab), pas le déploiement
+# applicatif lui-même (celui-ci est géré par Helm, cf. helm/orion/).
+#
+# Pré-requis :
+#   - kubectl déjà configuré vers le cluster cible (aws eks update-kubeconfig ...)
+#   - Variables à fournir en extra-vars ou variables d'environnement CI, JAMAIS en dur :
+#       registry_username, registry_password (deploy token GitLab, scope read_registry)
+
+- name: Bootstrap du cluster EKS Orion
+  hosts: local
+  gather_facts: false
+
+  vars:
+    namespace: orion
+    registry_server: registry.gitlab.com
+    registry_secret_name: gitlab-registry-secret
+
+  tasks:
+    - name: Vérifier que les identifiants du registre sont fournis
+      ansible.builtin.assert:
+        that:
+          - registry_username is defined
+          - registry_password is defined
+        fail_msg: >
+          Il manque registry_username / registry_password. Lancer avec :
+          ansible-playbook bootstrap-k8s.yml -e "registry_username=... registry_password=..."
+
+    - name: Créer le namespace applicatif
+      kubernetes.core.k8s:
+        state: present
+        api_version: v1
+        kind: Namespace
+        name: "{{ namespace }}"
+
+    - name: Construire la config docker (dockerconfigjson) pour le registre GitLab
+      ansible.builtin.set_fact:
+        docker_config_json: >-
+          {{
+            {
+              'auths': {
+                registry_server: {
+                  'username': registry_username,
+                  'password': registry_password,
+                  'auth': (registry_username + ':' + registry_password) | b64encode
+                }
+              }
+            } | to_json
+          }}
+      no_log: true
+
+    - name: Créer/mettre à jour le secret d'accès au registre GitLab
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          type: kubernetes.io/dockerconfigjson
+          metadata:
+            name: "{{ registry_secret_name }}"
+            namespace: "{{ namespace }}"
+          data:
+            .dockerconfigjson: "{{ docker_config_json | b64encode }}"
+      no_log: true
+
+    - name: Afficher un résumé
+      ansible.builtin.debug:
+        msg: "Namespace '{{ namespace }}' et secret '{{ registry_secret_name }}' prêts pour le déploiement Helm."
