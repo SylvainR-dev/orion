@@ -1,3 +1,10 @@
+# [1.12.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.11.0...v1.12.0) (2026-07-22)
+
+
+### Features
+
+* **ci:** ajoute le job deploy via Helm sur EKS ([65f225c](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/65f225cc1e900e8a5f3bf35b872eff44e9b0b51f))
+
 # [1.11.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.10.0...v1.11.0) (2026-07-22)
 
 
