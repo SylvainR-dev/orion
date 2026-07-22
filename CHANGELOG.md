@@ -1,3 +1,10 @@
+# [1.10.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.9.0...v1.10.0) (2026-07-22)
+
+
+### Features
+
+* **helm:** ajoute le chart Helm pour front/back sur EKS ([f854c8b](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/f854c8b41f09a368623115d04ff3cc9d40196f49))
+
 # [1.9.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.8.0...v1.9.0) (2026-07-22)
 
 
