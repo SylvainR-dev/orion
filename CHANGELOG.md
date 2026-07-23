@@ -1,3 +1,10 @@
+## [1.12.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.12.0...v1.12.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* **ci:** corrige la couverture de tests Jacoco/lcov pour SonarCloud (back+front) ([e84bab8](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/e84bab89645e182e46c37a8f7ef1ef3616f4b586))
+
 # [1.12.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.11.0...v1.12.0) (2026-07-22)
 
 
