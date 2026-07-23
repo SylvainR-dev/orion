@@ -30,7 +30,11 @@ test-front:
   script:
     - cd front
     - npm ci
-    - CHROME_BIN=/opt/google/chrome/chrome npx @angular/cli test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox
+    - CHROME_BIN=/opt/google/chrome/chrome npx @angular/cli test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox --code-coverage
+  artifacts:
+    paths:
+      - front/coverage/microcrm/lcov.info
+    expire_in: 1 hour
 
 test-back:
   image: gradle:jdk17
@@ -38,10 +42,17 @@ test-back:
   script:
     - cd back
     - ./gradlew test
+  artifacts:
+    paths:
+      - back/build/reports/jacoco/test/jacocoTestReport.xml
+    expire_in: 1 hour
 
 sonarqube-back:
   stage: quality
   image: gradle:jdk17
+  needs:
+    - job: test-back
+      artifacts: true
   cache:
     key: "${CI_JOB_NAME}"
     paths:
@@ -58,6 +69,9 @@ sonarqube-front:
   image:
     name: sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
+  needs:
+    - job: test-front
+      artifacts: true
   cache:
     key: "${CI_JOB_NAME}"
     paths:

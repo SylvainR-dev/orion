@@ -27,9 +27,9 @@ module.exports = function (config) {
     coverageReporter: {
       dir: require("path").join(__dirname, "./coverage/microcrm"),
       subdir: ".",
-      reporters: [{ type: "html" }, { type: "text-summary" }],
+      reporters: [{ type: "html" }, { type: "text-summary" }, { type: "lcov" }],
     },
-    reporters: ["progress", "kjhtml"],
+    reporters: ["progress", "kjhtml", "coverage"],
     browsers: ["ChromeHeadlessNoSandbox", "ChromeHeadless", "Chrome"],
     customLaunchers: {
       ChromeHeadlessNoSandbox: {
