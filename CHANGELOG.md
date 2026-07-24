@@ -1,3 +1,10 @@
+# [1.13.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.12.1...v1.13.0) (2026-07-24)
+
+
+### Features
+
+* **terraform:** migre le state vers un backend S3 distant ([92f7f8f](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/92f7f8fe9495f02f2ef2286d745da1b82a310ec8))
+
 ## [1.12.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.12.0...v1.12.1) (2026-07-23)
 
 
