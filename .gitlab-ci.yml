@@ -9,6 +9,7 @@ stages:
   - build
   - publish
   - infra
+  - monitoring
   - deploy
 
 version:
@@ -201,3 +202,31 @@ deploy:
     - helm upgrade --install orion helm/orion/ --namespace orion
         --set backend.tag="$VERSION" --set frontend.tag="$VERSION"
         --wait --timeout 5m
+
+monitoring-deploy:
+  stage: monitoring
+  image:
+    name: alpine/k8s:1.30.2
+  script:
+    - aws eks update-kubeconfig --region eu-west-3 --name orion-eks
+    - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    - helm repo add grafana https://grafana.github.io/helm-charts
+    - helm repo update
+    - kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+    - >
+      helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack
+      --namespace monitoring
+      -f helm/monitoring/kube-prometheus-stack-values.yaml
+      --set grafana.adminPassword=$GRAFANA_ADMIN_PASSWORD
+      --wait --timeout 10m
+    - >
+      helm upgrade --install loki-stack grafana/loki-stack
+      --namespace monitoring
+      -f helm/monitoring/loki-stack-values.yaml
+      --wait --timeout 10m
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+  needs:
+    - job: terraform-apply
+      optional: true

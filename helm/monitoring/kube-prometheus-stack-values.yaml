@@ -1,0 +1,72 @@
+# Alertmanager désactivé : pas d'usage pédagogique prévu pour ce projet,
+# ça libère de la RAM immédiatement sur des nœuds déjà contraints.
+alertmanager:
+  enabled: false
+
+# --- Prometheus ---
+prometheus:
+  prometheusSpec:
+    # Rétention réduite (2 jours au lieu des 10j+ par défaut) : moins de
+    # pression sur le stockage et la RAM, suffisant pour la démo/soutenance.
+    retention: 2d
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ebs-gp3
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 8Gi
+
+    # Un seul replica : pas de HA nécessaire pour ce contexte.
+    replicas: 1
+
+# --- Grafana ---
+grafana:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  persistence:
+    enabled: true
+    storageClassName: ebs-gp3
+    accessModes: ["ReadWriteOnce"]
+    size: 2Gi
+
+  # Mot de passe admin à surcharger via --set ou variable CI/CD au moment
+  # du helm install/upgrade (jamais commité en clair dans ce fichier).
+  adminPassword: ""
+
+# --- Composants annexes ---
+# kube-state-metrics et node-exporter sont légers, gardés avec des limites
+# explicites plutôt que les défauts (parfois plus généreux que nécessaire).
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 50m
+      memory: 128Mi
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi

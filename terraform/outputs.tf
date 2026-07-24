@@ -28,3 +28,8 @@ output "configure_kubectl" {
   description = "Commande à lancer pour configurer kubectl"
   value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
 }
+
+output "ebs_csi_role_arn" {
+  description = "ARN du rôle IAM (IRSA) utilisé par le driver CSI EBS pour la persistance des volumes (stack PLG)"
+  value       = module.ebs_csi_irsa_role.iam_role_arn
+}

@@ -1,0 +1,43 @@
+# Grafana désactivé ici : on utilise déjà celui embarqué dans
+# kube-prometheus-stack, pas besoin d'un doublon.
+grafana:
+  enabled: false
+
+# --- Loki ---
+loki:
+  # Mode single binary / filesystem : pas de mode distribué ni d'object
+  # storage (S3) — inutile à cette échelle, reste simple et cohérent
+  # avec l'esprit pédagogique du projet.
+  persistence:
+    enabled: true
+    storageClassName: ebs-gp3
+    accessModes: ["ReadWriteOnce"]
+    size: 8Gi
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
+
+  config:
+    # Rétention alignée sur celle de Prometheus (2 jours) pour rester
+    # cohérent et limiter la consommation de stockage/RAM.
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 48h
+
+    limits_config:
+      retention_period: 48h
+
+# --- Promtail (agent de collecte, léger, tourne en DaemonSet sur chaque nœud) ---
+promtail:
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
