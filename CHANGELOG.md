@@ -1,3 +1,10 @@
+## [1.13.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.13.0...v1.13.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* **ci:** corrige la config Terraform pour fonctionner en CI ([02f8c17](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/02f8c17cbc43a4c2a24c8c1b77c5dedcbef02105))
+
 # [1.13.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.12.1...v1.13.0) (2026-07-24)
 
 
