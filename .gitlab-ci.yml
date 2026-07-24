@@ -137,7 +137,9 @@ publish-images:
 
 terraform-plan:
   stage: infra
-  image: hashicorp/terraform:1.15
+  image:
+    name: hashicorp/terraform:1.15
+    entrypoint: [""]
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -148,7 +150,9 @@ terraform-plan:
 
 terraform-apply:
   stage: infra
-  image: hashicorp/terraform:1.15
+  image:
+    name: hashicorp/terraform:1.15
+    entrypoint: [""]
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
