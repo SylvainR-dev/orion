@@ -12,12 +12,10 @@ terraform {
     bucket       = "orion-terraform-state-476646938402"
     key          = "eks/terraform.tfstate"
     region       = "eu-west-3"
-    profile      = "orion"
     use_lockfile = true
   }
 }
 
 provider "aws" {
-  region  = var.aws_region
-  profile = "orion"
+  region = var.aws_region
 }
