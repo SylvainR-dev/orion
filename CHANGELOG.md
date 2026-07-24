@@ -1,3 +1,10 @@
+# [1.14.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.13.2...v1.14.0) (2026-07-24)
+
+
+### Features
+
+* **monitoring:** ajoute la stack PLG (Prometheus, Loki, Grafana) via Helm ([09edfac](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/09edfacef601fe7e9bca12aee7517a5dd7e276d2))
+
 ## [1.13.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.13.1...v1.13.2) (2026-07-24)
 
 
