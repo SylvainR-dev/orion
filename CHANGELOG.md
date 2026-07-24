@@ -1,3 +1,10 @@
+## [1.13.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.13.1...v1.13.2) (2026-07-24)
+
+
+### Bug Fixes
+
+* **ci:** override l'entrypoint de l'image hashicorp/terraform ([9c3c3b6](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/9c3c3b66b107f82264f53ebc0bf4fb162c71af39))
+
 ## [1.13.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.13.0...v1.13.1) (2026-07-24)
 
 
