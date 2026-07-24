@@ -8,14 +8,13 @@ terraform {
     }
   }
 
-  # Backend local pour l'instant (state en clair sur la machine).
-  # À migrer vers un backend S3 + verrouillage DynamoDB avant tout travail en équipe,
-  # pour éviter des états concurrents/écrasés entre plusieurs personnes.
-  # backend "s3" {
-  #   bucket = "orion-terraform-state"
-  #   key    = "eks/terraform.tfstate"
-  #   region = "eu-west-3"
-  # }
+  backend "s3" {
+    bucket       = "orion-terraform-state-476646938402"
+    key          = "eks/terraform.tfstate"
+    region       = "eu-west-3"
+    profile      = "orion"
+    use_lockfile = true
+  }
 }
 
 provider "aws" {
