@@ -1,3 +1,10 @@
+## [1.14.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.0...v1.14.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* **ansible:** gère le StorageClass ebs-gp3 via le bootstrap plutôt qu'en kubectl manuel ([088e143](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/088e1435b4e9134762275fed516fc7fdb2fcb4d4))
+
 # [1.14.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.13.2...v1.14.0) (2026-07-24)
 
 
