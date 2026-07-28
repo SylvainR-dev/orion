@@ -2,8 +2,9 @@
 # Bootstrap du cluster EKS pour l'application Orion.
 #
 # Rôle d'Ansible ici : configuration "day-2" du cluster une fois provisionné par Terraform
-# (namespace applicatif, secret d'authentification au registre GitLab), pas le déploiement
-# applicatif lui-même (celui-ci est géré par Helm, cf. helm/orion/).
+# (namespace applicatif, secret d'authentification au registre GitLab, StorageClass pour la
+# persistance EBS), pas le déploiement applicatif lui-même (celui-ci est géré par Helm, cf.
+# helm/orion/ et helm/monitoring/).
 #
 # Pré-requis :
 #   - kubectl déjà configuré vers le cluster cible (aws eks update-kubeconfig ...)
@@ -18,6 +19,7 @@
     namespace: orion
     registry_server: registry.gitlab.com
     registry_secret_name: gitlab-registry-secret
+    ebs_storage_class_name: ebs-gp3
 
   tasks:
     - name: Vérifier que les identifiants du registre sont fournis
@@ -35,6 +37,21 @@
         api_version: v1
         kind: Namespace
         name: "{{ namespace }}"
+
+    - name: Créer le StorageClass EBS (persistance des volumes - stack PLG)
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: storage.k8s.io/v1
+          kind: StorageClass
+          metadata:
+            name: "{{ ebs_storage_class_name }}"
+          provisioner: ebs.csi.aws.com
+          parameters:
+            type: gp3
+            encrypted: "true"
+          reclaimPolicy: Retain
+          volumeBindingMode: WaitForFirstConsumer
 
     - name: Construire la config docker (dockerconfigjson) pour le registre GitLab
       ansible.builtin.set_fact:
@@ -68,4 +85,6 @@
 
     - name: Afficher un résumé
       ansible.builtin.debug:
-        msg: "Namespace '{{ namespace }}' et secret '{{ registry_secret_name }}' prêts pour le déploiement Helm."
+        msg: >-
+          Namespace '{{ namespace }}', StorageClass '{{ ebs_storage_class_name }}' et secret
+          '{{ registry_secret_name }}' prêts pour le déploiement Helm.
