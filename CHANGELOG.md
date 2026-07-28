@@ -1,3 +1,18 @@
+# [1.15.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.3...v1.15.0) (2026-07-28)
+
+
+### Bug Fixes
+
+* **ci:** ajoute rules explicites sur test-front/test-back pour les pipelines de MR ([94bd39f](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/94bd39f9359ab64cef902d14c64c8cb8c6f8298d))
+* **ci:** retire terraform-plan des pipelines de MR ([7e9558c](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/7e9558c165c333f8d104e3c25244c63bcbe36020))
+* corrige CascadeType.ALL sur Organization.persons (ConcurrentModificationException a la suppression) ([c9c9544](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/c9c95444bc8444b28fe72023ef3991047c7866fe))
+
+
+### Features
+
+* ajoute controllers, GlobalExceptionHandler, CorsConfig; corrige InitialDataFixture; supprime SpringDataRestCustomization ([2ded518](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/2ded518d5696aca596dffe358a853097ed858386))
+* ajoute PersonService/OrganizationService, DTOs et exceptions metier ([94e5854](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/94e58549ba61879b1a09785cbed1d50eb4acd473))
+
 ## [1.14.3](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.2...v1.14.3) (2026-07-28)
 
 
