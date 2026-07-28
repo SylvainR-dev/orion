@@ -2,6 +2,9 @@
 # kube-prometheus-stack, pas besoin d'un doublon.
 grafana:
   enabled: false
+  sidecar:
+    datasources:
+      enabled: false
 
 # --- Loki ---
 loki:
@@ -41,7 +44,3 @@ promtail:
     limits:
       cpu: 100m
       memory: 128Mi
-
-sidecar:
-  datasources:
-    enabled: false
