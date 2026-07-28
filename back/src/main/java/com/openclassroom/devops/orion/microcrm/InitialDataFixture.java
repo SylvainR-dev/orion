@@ -2,8 +2,12 @@ package com.openclassroom.devops.orion.microcrm;
 
 import java.util.Arrays;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import com.openclassroom.devops.orion.microcrm.organization.Organization;
+import com.openclassroom.devops.orion.microcrm.organization.OrganizationRepository;
+import com.openclassroom.devops.orion.microcrm.person.Person;
+import com.openclassroom.devops.orion.microcrm.person.PersonRepository;
 
 import ro.polak.springboot.datafixtures.DataFixture;
 import ro.polak.springboot.datafixtures.DataFixtureSet;
@@ -11,11 +15,13 @@ import ro.polak.springboot.datafixtures.DataFixtureSet;
 @Component
 public class InitialDataFixture implements DataFixture {
 
-    @Autowired
-    private final PersonRepository personRepository = null;
+    private final PersonRepository personRepository;
+    private final OrganizationRepository organizationRepository;
 
-    @Autowired
-    private final OrganizationRepository organizationRepository = null;
+    public InitialDataFixture(PersonRepository personRepository, OrganizationRepository organizationRepository) {
+        this.personRepository = personRepository;
+        this.organizationRepository = organizationRepository;
+    }
 
     @Override
     public boolean canBeLoaded() {
@@ -29,14 +35,11 @@ public class InitialDataFixture implements DataFixture {
 
     @Override
     public void load() {
-
         Person jdoe = new Person("John", "Doe", "jdoe@example.net");
 
-        Organization orionInc = new Organization();
-        orionInc.setName("Orion Incorporated");
+        Organization orionInc = new Organization("Orion Incorporated");
         orionInc.addPerson(jdoe);
 
         organizationRepository.saveAll(Arrays.asList(orionInc));
     }
-
 }

@@ -29,6 +29,9 @@ version:
 test-front:
   image: cypress/browsers:latest
   stage: test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
   script:
     - cd front
     - npm ci
@@ -41,6 +44,9 @@ test-front:
 test-back:
   image: gradle:jdk17
   stage: test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
   script:
     - cd back
     - ./gradlew test
@@ -143,7 +149,6 @@ terraform-plan:
     entrypoint: [""]
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   script:
     - cd terraform
     - terraform init
