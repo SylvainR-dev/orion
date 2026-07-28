@@ -214,15 +214,15 @@ monitoring-deploy:
     - helm repo update
     - kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
     - >
+      helm upgrade --install loki-stack grafana/loki-stack
+      --namespace monitoring
+      -f helm/monitoring/loki-stack-values.yaml
+      --wait --timeout 10m
+    - >
       helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack
       --namespace monitoring
       -f helm/monitoring/kube-prometheus-stack-values.yaml
       --set grafana.adminPassword=$GRAFANA_ADMIN_PASSWORD
-      --wait --timeout 10m
-    - >
-      helm upgrade --install loki-stack grafana/loki-stack
-      --namespace monitoring
-      -f helm/monitoring/loki-stack-values.yaml
       --wait --timeout 10m
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
