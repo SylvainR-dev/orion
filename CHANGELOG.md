@@ -1,3 +1,10 @@
+## [1.15.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.15.1...v1.15.2) (2026-07-28)
+
+
+### Bug Fixes
+
+* **helm:** corrige l'indentation grafana.sidecar.datasources dans loki-stack-values ([dc20961](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/dc209619b1dafe3c17a78fbc6dc4cfadf2c0794e))
+
 ## [1.15.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.15.0...v1.15.1) (2026-07-28)
 
 
