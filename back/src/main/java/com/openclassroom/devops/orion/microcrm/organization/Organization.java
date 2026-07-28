@@ -25,7 +25,7 @@ public class Organization {
 
     private String name;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Person> persons = new ArrayList<>();
 
     @CreationTimestamp
