@@ -1,3 +1,10 @@
+## [1.14.3](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.2...v1.14.3) (2026-07-28)
+
+
+### Bug Fixes
+
+* **ci:** met à jour loki-stack dans le job monitoring-deploy (résout le conflit de datasource par défaut) ([b65c43a](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/b65c43ad653fb42611937852816172b0277fd6ca))
+
 ## [1.14.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.1...v1.14.2) (2026-07-28)
 
 
