@@ -1,3 +1,10 @@
+## [1.15.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.15.0...v1.15.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* **ci:** ajoute workflow rules pour eviter le doublon de pipelines ([db8c246](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/db8c24674f5054d2f0314361a23dd723308815c1))
+
 # [1.15.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.3...v1.15.0) (2026-07-28)
 
 
