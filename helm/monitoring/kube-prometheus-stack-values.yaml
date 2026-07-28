@@ -50,6 +50,17 @@ grafana:
   # du helm install/upgrade (jamais commité en clair dans ce fichier).
   adminPassword: ""
 
+  # Datasource Loki ajoutée manuellement ici (plutôt que via le sidecar
+  # auto-généré de loki-stack) pour forcer isDefault: false et éviter le
+  # conflit avec Prometheus (déjà isDefault) qui faisait planter Grafana
+  # au démarrage ("Only one datasource per organization can be marked as default").
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://loki-stack:3100
+      access: proxy
+      isDefault: false
+
 # --- Composants annexes ---
 # kube-state-metrics et node-exporter sont légers, gardés avec des limites
 # explicites plutôt que les défauts (parfois plus généreux que nécessaire).

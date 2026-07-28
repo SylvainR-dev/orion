@@ -41,3 +41,7 @@ promtail:
     limits:
       cpu: 100m
       memory: 128Mi
+
+sidecar:
+  datasources:
+    enabled: false
