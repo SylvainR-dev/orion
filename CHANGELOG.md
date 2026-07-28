@@ -1,3 +1,11 @@
+## [1.14.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.1...v1.14.2) (2026-07-28)
+
+
+### Bug Fixes
+
+* **monitoring:** résout le conflit de datasource par défaut (Loki/Prometheus) causant le crash de Grafana ([aadde78](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/aadde782daf37b4499f6e64180813e8ffbf56cd4))
+* **terraform:** passe node_desired_size à 3 (nécessaire pour héberger app + monitoring simultanément) ([3b4cf62](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/3b4cf62ddfec5196b11cc134d91a5d823957fc91))
+
 ## [1.14.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.0...v1.14.1) (2026-07-28)
 
 
