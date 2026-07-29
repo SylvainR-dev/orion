@@ -1,3 +1,11 @@
+# [1.16.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.15.2...v1.16.0) (2026-07-29)
+
+
+### Features
+
+* **monitoring:** ajoute le Pushgateway Prometheus et le job de calcul des métriques DORA ([e31e9e1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/e31e9e1970be6c38eb1d27580e0c1694e79f22c9))
+* **terraform:** active le mode CPU unlimited sur le node group EKS ([86621b4](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/86621b4e3eef46346c48483f0784e79a785e1017))
+
 ## [1.15.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.15.1...v1.15.2) (2026-07-28)
 
 
