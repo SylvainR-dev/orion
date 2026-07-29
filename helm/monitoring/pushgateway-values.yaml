@@ -8,4 +8,5 @@ resources:
 
 serviceMonitor:
   enabled: true
-  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
