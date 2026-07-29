@@ -1,3 +1,10 @@
+## [1.16.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.0...v1.16.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* **monitoring:** ajoute le label release au ServiceMonitor du Pushgateway pour qu'il soit scrapé par Prometheus ([15e1361](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/15e13615d264897ce035f66c14259833264f9b26))
+
 # [1.16.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.15.2...v1.16.0) (2026-07-29)
 
 
