@@ -1,3 +1,10 @@
+## [1.16.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.1...v1.16.2) (2026-07-29)
+
+
+### Bug Fixes
+
+* **monitoring:** augmente les limites CPU/mémoire de Grafana pour réduire la contention SQLite ([d86eea6](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/d86eea67b830035d7c69f69ecef22ee8d9ee445c))
+
 ## [1.16.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.0...v1.16.1) (2026-07-29)
 
 
