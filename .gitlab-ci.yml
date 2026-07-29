@@ -234,9 +234,33 @@ monitoring-deploy:
       -f helm/monitoring/kube-prometheus-stack-values.yaml
       --set grafana.adminPassword=$GRAFANA_ADMIN_PASSWORD
       --wait --timeout 10m
+    - >
+      helm upgrade --install prometheus-pushgateway prometheus-community/prometheus-pushgateway
+      --namespace monitoring
+      -f helm/monitoring/pushgateway-values.yaml
+      --wait --timeout 5m
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
   needs:
     - job: terraform-apply
       optional: true
+
+dora-metrics:
+  stage: monitoring
+  image: alpine/k8s:1.30.2
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+  variables:
+    PUSHGATEWAY_URL: "http://localhost:9091"
+    DORA_WINDOW_DAYS: "30"
+  before_script:
+    - apk add --no-cache python3 py3-pip
+    - pip install --break-system-packages requests prometheus_client
+    - aws eks update-kubeconfig --region eu-west-3 --name orion-eks
+    - kubectl -n monitoring port-forward svc/prometheus-pushgateway 9091:9091 &
+    - sleep 3
+  script:
+    - python3 scripts/dora_metrics.py

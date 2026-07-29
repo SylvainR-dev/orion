@@ -64,6 +64,13 @@ module "eks" {
       min_size     = var.node_min_size
       max_size     = var.node_max_size
       desired_size = var.node_desired_size
+
+      # Mode CPU Unlimited : évite le throttling en cas de session de travail
+      # prolongée dépassant la baseline t3, sans changer la taille d'instance
+      # (justifié par un usage en sessions courtes, pas de charge continue 24/7).
+      credit_specification = {
+        cpu_credits = "unlimited"
+      }
     }
   }
 
