@@ -1,3 +1,12 @@
+## [1.16.4](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.3...v1.16.4) (2026-08-04)
+
+
+### Bug Fixes
+
+* **back:** remplace la lambda par une référence de méthode Person::getId (code smell SonarQube) ([d87a092](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/d87a09294acb6085de3efe802bff6eb41d7fbc2a))
+* **ci:** corrige la génération du slug des dashboards Grafana (gère les / dans les titres) ([662a9fe](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/662a9fe9fddeb73f9889b038b43364ed093b2a86))
+* **front:** réapplique la migration HAL->REST des services et composants (routes /api/*, personIds) ([0dce47b](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/0dce47b66d8a47756ebfdc9917b40672f519bf83))
+
 ## [1.16.3](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.2...v1.16.3) (2026-08-04)
 
 
