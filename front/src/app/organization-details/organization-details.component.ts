@@ -18,6 +18,7 @@ export class OrganizationDetailsComponent implements OnInit {
     name: '',
     createdAt: new Date(),
     updatedAt: undefined as (Date | undefined),
+    personIds: [] as number[],
     persons: [] as Person[]
   };
 

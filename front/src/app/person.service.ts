@@ -9,38 +9,37 @@ export class PersonService {
   constructor(private client: HttpClient) {
   }
 
-  async fetchById(id: number) {
-    const response = await this.client.get(`${API_BASE_URL}/persons/${id}`)
+  async fetchById(id: number): Promise<Person> {
+    const response = this.client.get(`${API_BASE_URL}/api/persons/${id}`)
     const person = await firstValueFrom(response) as Person
-    const organizations = await this.fetchPersonOrganizations(person.id as number)
-    person.organizations = organizations
+    person.organizations = await this.fetchPersonOrganizations(id)
     return person
   }
 
-  async fetchAll() {
-    const response = await this.client.get(`${API_BASE_URL}/persons`)
-    const result = await firstValueFrom(response) as any
-    const persons = result["_embedded"].persons as Person[]
+  async fetchAll(): Promise<Person[]> {
+    const response = this.client.get(`${API_BASE_URL}/api/persons`)
+    const persons = await firstValueFrom(response) as Person[]
     return persons
   }
 
-  async fetchPersonOrganizations(id: number) {
-    const response = await this.client.get(`${API_BASE_URL}/persons/${id}/organizations`)
-    const result = await firstValueFrom(response) as any
-    const organizations = result["_embedded"].organizations as Organization[]
-    return organizations
+  async fetchPersonOrganizations(personId: number): Promise<Organization[]> {
+    const response = this.client.get(`${API_BASE_URL}/api/organizations`)
+    const allOrganizations = await firstValueFrom(response) as Organization[]
+    return allOrganizations
+      .filter(org => org.personIds.includes(personId))
+      .map(org => ({ ...org, persons: [] as Person[] }))
   }
 
-  async deleteById(id: number) {
-    const response = await this.client.delete(`${API_BASE_URL}/persons/${id}`)
+  async deleteById(id: number): Promise<void> {
+    const response = this.client.delete(`${API_BASE_URL}/api/persons/${id}`)
     await firstValueFrom(response)
     return
   }
 
-  async save(person: Person) {
+  async save(person: Person): Promise<Person> {
     let response;
     if (person.id === undefined) {
-      response = await this.client.post(`${API_BASE_URL}/persons`, {
+      response = this.client.post(`${API_BASE_URL}/api/persons`, {
         firstName: person.firstName,
         lastName: person.lastName,
         bio: person.bio,
@@ -48,7 +47,7 @@ export class PersonService {
         email: person.email,
       })
     } else {
-      response = await this.client.put(`${API_BASE_URL}/persons/${person.id}`, {
+      response = this.client.put(`${API_BASE_URL}/api/persons/${person.id}`, {
         firstName: person.firstName,
         lastName: person.lastName,
         bio: person.bio,
@@ -58,9 +57,7 @@ export class PersonService {
     }
 
     person = await firstValueFrom(response) as Person
-
-    const organizations = await this.fetchPersonOrganizations(person.id as number)
-    person.organizations = organizations
+    person.organizations = await this.fetchPersonOrganizations(person.id as number)
 
     return person
   }
