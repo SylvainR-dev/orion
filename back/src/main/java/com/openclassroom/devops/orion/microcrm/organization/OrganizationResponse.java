@@ -3,6 +3,8 @@ package com.openclassroom.devops.orion.microcrm.organization;
 import java.time.Instant;
 import java.util.List;
 
+import com.openclassroom.devops.orion.microcrm.person.Person;
+
 public record OrganizationResponse(
     Long id,
     String name,
@@ -14,7 +16,7 @@ public record OrganizationResponse(
         return new OrganizationResponse(
             organization.getId(),
             organization.getName(),
-            organization.getPersons().stream().map(p -> p.getId()).toList(),
+            organization.getPersons().stream().map(Person::getId).toList(),
             organization.getCreatedAt(),
             organization.getUpdatedAt()
         );
