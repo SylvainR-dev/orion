@@ -293,7 +293,7 @@ export-dashboards:
     - |
       UIDS=$(curl -s -u admin:$GRAFANA_ADMIN_PASSWORD "$GRAFANA_URL/api/search?type=dash-db" | jq -r '.[].uid')
       for uid in $UIDS; do
-        SLUG=$(curl -s -u admin:$GRAFANA_ADMIN_PASSWORD "$GRAFANA_URL/api/dashboards/uid/$uid" | jq -r '.dashboard.title' | tr '[:upper:] ' '[:lower:]-')
+        SLUG=$(curl -s -u admin:$GRAFANA_ADMIN_PASSWORD "$GRAFANA_URL/api/dashboards/uid/$uid" | jq -r '.dashboard.title' | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9]+#-#g; s#^-+|-+$##g')
         curl -s -u admin:$GRAFANA_ADMIN_PASSWORD "$GRAFANA_URL/api/dashboards/uid/$uid" | jq '.dashboard' > "helm/monitoring/dashboards/${SLUG}.json"
       done
     - git config user.email "ci@orion.local"
