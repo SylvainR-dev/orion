@@ -239,6 +239,16 @@ monitoring-deploy:
       --namespace monitoring
       -f helm/monitoring/pushgateway-values.yaml
       --wait --timeout 5m
+    - |
+      for f in helm/monitoring/dashboards/*.json; do
+        [ -e "$f" ] || continue
+        name=$(basename "$f" .json)
+        kubectl create configmap "grafana-dashboard-$name" \
+          --from-file="dashboard.json=$f" -n monitoring \
+          --dry-run=client -o yaml | \
+          kubectl label --local -f - grafana_dashboard=1 -o yaml | \
+          kubectl apply -f -
+      done
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: manual
@@ -264,3 +274,36 @@ dora-metrics:
     - sleep 3
   script:
     - python3 scripts/dora_metrics.py
+
+export-dashboards:
+  stage: monitoring
+  image: alpine/k8s:1.30.2
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+  variables:
+    GRAFANA_URL: "http://localhost:3000"
+  before_script:
+    - apk add --no-cache curl jq git
+    - aws eks update-kubeconfig --region eu-west-3 --name orion-eks
+    - kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80 &
+    - sleep 3
+  script:
+    - mkdir -p helm/monitoring/dashboards
+    - |
+      UIDS=$(curl -s -u admin:$GRAFANA_ADMIN_PASSWORD "$GRAFANA_URL/api/search?type=dash-db" | jq -r '.[].uid')
+      for uid in $UIDS; do
+        SLUG=$(curl -s -u admin:$GRAFANA_ADMIN_PASSWORD "$GRAFANA_URL/api/dashboards/uid/$uid" | jq -r '.dashboard.title' | tr '[:upper:] ' '[:lower:]-')
+        curl -s -u admin:$GRAFANA_ADMIN_PASSWORD "$GRAFANA_URL/api/dashboards/uid/$uid" | jq '.dashboard' > "helm/monitoring/dashboards/${SLUG}.json"
+      done
+    - git config user.email "ci@orion.local"
+    - git config user.name "GitLab CI"
+    - git remote set-url origin "https://oauth2:${GIT_PUSH_TOKEN}@gitlab.com/${CI_PROJECT_PATH}.git"
+    - git add helm/monitoring/dashboards/
+    - |
+      if git diff --cached --quiet; then
+        echo "Aucun changement de dashboard à sauvegarder."
+      else
+        git commit -m "chore(monitoring): sauvegarde automatique des dashboards Grafana [skip ci]"
+        git push origin HEAD:main
+      fi
