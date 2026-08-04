@@ -1,3 +1,11 @@
+## [1.16.3](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.2...v1.16.3) (2026-08-04)
+
+
+### Bug Fixes
+
+* **ci:** supprime le job pushgateway dupliqué dans monitoring-deploy ([dcb7e43](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/dcb7e436c9bcedced3bf8212ff995bb9ff446205))
+* **terraform:** passe cluster_version de 1.30 à 1.34 (1.30 hors support étendu EKS) ([dfba0bb](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/dfba0bbc597ea8565fe71c8389c22c4d683d21f5))
+
 ## [1.16.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.1...v1.16.2) (2026-07-29)
 
 
