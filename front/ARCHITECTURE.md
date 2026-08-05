@@ -121,7 +121,7 @@ push / merge request sur GitLab
   ansible-bootstrap (auto, idempotent)
         │
         ▼
-  deploy (Helm upgrade --install, avec health check + rollback Ansible)
+  deploy (Helm upgrade --install --rollback-on-failure)
         │
         ▼
   monitoring-deploy (stack PLG) + dora-metrics (schedule quotidien 6h)
@@ -130,6 +130,31 @@ push / merge request sur GitLab
 - Un bloc `workflow:` global limite le déclenchement aux pipelines de merge request ou aux push sur `main`, pour éviter le doublon de pipelines observé en cours de projet.
 - `terraform-plan`/`terraform-apply` sont exclus des pipelines de merge request (les credentials AWS, en variables protégées, ne sont disponibles que sur `main`).
 - `terraform-apply` reste **manuel** (`when: manual`) par choix délibéré : garde-fou humain avant toute modification facturée de l'infrastructure AWS.
+
+### 6.1. Mécanisme de rollback applicatif
+
+Le déploiement applicatif (job `deploy`) s'appuie sur le flag Helm `--rollback-on-failure` (remplaçant `--atomic`, deprecated) :
+
+```yaml
+helm upgrade --install orion helm/orion/ --namespace orion
+    --set backend.tag="$VERSION" --set frontend.tag="$VERSION"
+    --rollback-on-failure --timeout 5m
+```
+
+Si les pods de la nouvelle révision ne deviennent pas `Ready` dans le délai imparti (image inexistante, crash au démarrage, etc.), Helm **annule automatiquement la révision en échec et restaure la dernière révision stable**, sans intervention manuelle.
+
+Ce mécanisme a été **testé en conditions réelles** sur le cluster EKS, en déployant volontairement un tag d'image inexistant (`version-inexistante-9999`). Résultat observé via `helm history orion -n orion` :
+
+```
+REVISION  STATUS      DESCRIPTION
+1         superseded  Install complete
+2         failed      Upgrade "orion" failed: context canceled
+3         deployed    Rollback to 1
+```
+
+La révision 3 confirme le retour automatique à la révision 1 (dernière version stable), avec les pods `orion-backend`/`orion-frontend` de nouveau `Running` sur le tag d'image correct.
+
+Ce mécanisme remplace le rollback Ansible/health-check mis en place en Partie 1 (environnement de démo simulé, SSH + Docker), abandonné avec la bascule vers Kubernetes/Helm en Partie 2 — le rollback est désormais nativement géré par Helm plutôt que scripté manuellement.
 
 ## 7. Architecture de supervision (monitoring)
 
@@ -162,7 +187,7 @@ push / merge request sur GitLab
 | Verrouillage S3 natif plutôt que DynamoDB | Simplification pédagogique assumée (Terraform ≥ 1.10 uniquement) |
 | `terraform-apply` manuel | Garde-fou humain avant toute modification facturée de l'infrastructure |
 | Registre GitLab Container Registry conservé (pas d'ECR) | Évite un composant d'infrastructure supplémentaire à gérer |
-| Rollback applicatif géré par Ansible (health check + retour version précédente) | Testé et validé concrètement sur deux scénarios d'échec distincts |
+| Rollback applicatif géré nativement par Helm (`--rollback-on-failure`) | Testé et validé en conditions réelles sur EKS (déploiement d'un tag inexistant, retour automatique confirmé via `helm history`) |
 
 ## 9. Limites d'architecture connues
 
