@@ -1,3 +1,10 @@
+# [1.17.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.4...v1.17.0) (2026-08-05)
+
+
+### Features
+
+* **ci:** ajoute --atomic au déploiement Helm pour un rollback automatique en cas d'échec ([8536f14](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/8536f1494274d92ac581319eccfa9bcce3d3542c))
+
 ## [1.16.4](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.3...v1.16.4) (2026-08-04)
 
 
