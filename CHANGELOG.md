@@ -1,3 +1,10 @@
+## [1.18.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.18.0...v1.18.1) (2026-08-05)
+
+
+### Bug Fixes
+
+* **ci:** revient à --atomic (compat Helm CI) et ajoute rebase avant push dans export-dashboards ([4228b28](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/4228b28fad31375de5e05bf8572b9adb28dff2db))
+
 # [1.18.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.17.1...v1.18.0) (2026-08-05)
 
 
