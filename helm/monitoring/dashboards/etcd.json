@@ -1,6 +1,6 @@
 {
   "description": "etcd sample Grafana dashboard with Prometheus",
-  "id": 4255304698789888,
+  "id": 4348045221486592,
   "panels": [
     {
       "datasource": {
