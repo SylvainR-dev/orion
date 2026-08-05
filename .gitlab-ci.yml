@@ -211,7 +211,7 @@ deploy:
   script:
     - helm upgrade --install orion helm/orion/ --namespace orion
         --set backend.tag="$VERSION" --set frontend.tag="$VERSION"
-        --rollback-on-failure --timeout 5m
+        --atomic --timeout 5m
 
 monitoring-deploy:
   stage: monitoring
@@ -305,5 +305,7 @@ export-dashboards:
         echo "Aucun changement de dashboard à sauvegarder."
       else
         git commit -m "chore(monitoring): sauvegarde automatique des dashboards Grafana [skip ci]"
+        git fetch origin main
+        git rebase origin/main
         git push origin HEAD:main
       fi
