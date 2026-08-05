@@ -211,7 +211,7 @@ deploy:
   script:
     - helm upgrade --install orion helm/orion/ --namespace orion
         --set backend.tag="$VERSION" --set frontend.tag="$VERSION"
-        --wait --timeout 5m
+        --atomic --timeout 5m
 
 monitoring-deploy:
   stage: monitoring
