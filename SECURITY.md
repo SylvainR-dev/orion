@@ -1,6 +1,6 @@
 # Sécurité — MicroCRM (Orion)
 
-Ce document décrit l'approche DevSecOps mise en place sur le projet : contrôles de sécurité intégrés au pipeline (shift-left), gestion des secrets, sécurité applicative (back/front), sécurité des conteneurs, et dette de sécurité assumée au niveau infrastructure. Il complète `testing-back.md`, `testing-front.md`, `PERF-back.md` et `PERF-front.md`.
+Ce document décrit l'approche DevSecOps mise en place sur le projet : contrôles de sécurité intégrés au pipeline (shift-left), gestion des secrets, sécurité applicative (back/front), sécurité des conteneurs, et dette de sécurité assumée au niveau infrastructure. Il complète `back/TESTING.md`, `front/TESTING.md`, `back/PERF-back.md` et `front/PERF.md`.
 
 ## 1. Approche générale — Shift-left
 
@@ -26,7 +26,7 @@ L'architecture initiale (Spring Data REST pur, `@RepositoryRestResource`) exposa
 
 ## 3. Sécurité applicative — Frontend
 
-- L'appel à l'API backend se fait désormais via une API REST classique (`/api/persons`, `/api/organizations`), sans dépendance au format HAL/Spring Data REST qui exposait davantage la structure interne du modèle de données.
+- L'appel à l'API backend se fait via une API REST classique (`/api/persons`, `/api/organizations`), sans dépendance au format HAL/Spring Data REST qui exposait davantage la structure interne du modèle de données. Cette migration, initialement restée non appliquée sur `main` (travail resté isolé dans un stash Git local), a été réintégrée et validée en conditions réelles (backend et frontend démarrés en local, scénario complet création/association/dissociation testé).
 - La relation personne ↔ organisation est reconstruite **côté client par filtrage**, un choix qui évite d'exposer un endpoint supplémentaire côté backend plutôt que d'ajouter de la surface d'attaque.
 - Angular applique par défaut l'échappement contextuel (sanitization) du DOM, réduisant nativement le risque de XSS sur les données affichées — aucune vérification manuelle supplémentaire n'a été effectuée sur ce point.
 
@@ -44,32 +44,33 @@ trivy image --severity CRITICAL --exit-code 1 <image>
 
 - Deux projets SonarCloud distincts : un pour le backend (Java, via le plugin Gradle `org.sonarqube`), un pour le frontend (Angular/TypeScript, via `sonar-scanner-cli`).
 - **Quality Gate bloquante** : aucune fusion vers `main` n'est possible tant que la Quality Gate échoue (couverture de code, bugs bloquants/critiques, vulnérabilités critiques, dette technique, duplication).
-- Résultat actuel : Quality Gate passée des deux côtés (94,4 % de couverture sur le nouveau code backend, 0 hotspot de sécurité ; 0 nouvelle issue côté frontend).
-- Un point de vigilance a été signalé en cours de projet : le token SonarCloud exposé lors d'une session de travail, dont la régénération reste à confirmer.
+- Résultat actuel : Quality Gate passée des deux côtés (94 % de couverture instructions / 50 % branches côté backend, 0 hotspot de sécurité ; 98,46 % statements côté frontend, 0 nouvelle issue).
 
 ## 6. Gestion des secrets
 
 | Secret | Emplacement | Portée / scope |
 |---|---|---|
-| Credentials AWS (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`) | Variable CI/CD protégée | Disponible uniquement sur la branche protégée `main` |
+| Credentials AWS (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`) | Variable CI/CD protégée | Disponible uniquement sur la branche protégée `main` — utilisateur `orion-terraform`, policy IAM scopée (voir section 7) |
 | `GITLAB_TOKEN` (semantic-release) | Variable CI/CD protégée et masquée | Scope `api` |
 | `DORA_GITLAB_TOKEN` (script métriques DORA) | Variable CI/CD | Scope `read_api` (lecture seule, principe de moindre privilège respecté) |
-| `SONAR_TOKEN` / `SONAR_HOST_URL` | Variable CI/CD | **Non protégée** volontairement, pour fonctionner aussi sur les merge requests |
+| `SONAR_TOKEN` / `SONAR_HOST_URL` | Variable CI/CD | **Non protégée** volontairement, pour fonctionner aussi sur les merge requests ; token régénéré |
 | `REGISTRY_USERNAME` / `REGISTRY_PASSWORD` (deploy token GitLab) | Variable CI/CD | Scope `read_registry`, consommé par Ansible pour créer l'`imagePullSecret` |
 | Credentials registre en local | `ansible/registry-credentials.yml` | Fichier gitignoré, jamais commité |
-| `GRAFANA_ADMIN_PASSWORD` | ⚠️ Non encore défini en variable CI/CD | Mot de passe par défaut `prom-operator` toujours utilisé — **point ouvert à corriger** |
+| `GRAFANA_ADMIN_PASSWORD` | Variable CI/CD protégée et masquée | Définie (mot de passe custom, non `prom-operator`) |
+| `GIT_PUSH_TOKEN` (job `export-dashboards`) | Variable CI/CD protégée et masquée | Personal Access Token, scope `write_repository` |
 
-**Principe appliqué** : aucun secret n'est codé en dur dans le code ou les scripts ; tout passe par les variables CI/CD de GitLab. Un incident a néanmoins été rencontré en cours de projet (confusion entre credentials AWS et deploy token GitLab collés par erreur dans les mauvaises variables), illustrant l'importance de bien distinguer les types de credentials — voir section 9.
+
+
 
 ## 7. Sécurité de l'infrastructure Cloud
 
 | Aspect | État actuel | Statut |
 |---|---|---|
-| Utilisateur IAM `orion-terraform` | Doté du rôle `AdministratorAccess` | ⚠️ Dette assumée — disproportionné, à restreindre en conditions réelles |
+| Utilisateur IAM `orion-terraform` | Policy `orion-terraform-scoped` (custom), scopée par service et par ressource (EC2, EKS, IAM, KMS, CloudWatch Logs, S3, Auto Scaling), `iam:PassRole` restreint à 3 rôles précis avec condition `iam:PassedToService` (eks/ec2 uniquement) | ✅ Corrigé — `AdministratorAccess` et les policies `*FullAccess`/`PowerUser` héritées détachées ; validé par un cycle complet `terraform destroy`/`apply` réel sur EKS |
 | Endpoint API du cluster EKS | Public, sans restriction IP, sans VPN/bastion | ⚠️ Dette assumée — simplification pédagogique |
 | RBAC Kubernetes | Configuration par défaut du cluster | ⚠️ Non durci, namespace `orion` dédié comme seule isolation |
 | NetworkPolicy | Aucune | ⚠️ Absente — pas de restriction des communications inter-pods |
-| State Terraform | Backend S3 distant, versionné, verrouillage natif `use_lockfile` | ✅ Sécurisé (accès contrôlé par IAM), mais pas de verrouillage DynamoDB dédié (simplification assumée) |
+| State Terraform | Backend S3 distant, versionné, verrouillage natif `use_lockfile`, snapshots explicites additionnels (`scripts/backup-terraform-state.sh`) | ✅ Sécurisé (accès contrôlé par IAM), pas de verrouillage DynamoDB dédié (simplification assumée) |
 | Déploiement infrastructure (`terraform-apply`) | Déclenchement manuel (`when: manual`) | ✅ Garde-fou humain volontaire avant toute modification facturée |
 
 ## 8. Processus de traitement des vulnérabilités
@@ -82,24 +83,8 @@ trivy image --severity CRITICAL --exit-code 1 <image>
 
 ## 9. Dette de sécurité — synthèse et priorisation
 
-| Item | Risque | Priorité de correction |
-|---|---|---|
-| `orion-terraform` avec `AdministratorAccess` | Élevé (accès total au compte AWS depuis la CI) | Haute |
-| Endpoint EKS public sans restriction IP | Moyen (surface d'attaque exposée sur Internet) | Haute |
-| `GRAFANA_ADMIN_PASSWORD` par défaut (`prom-operator`) | Moyen (accès non autorisé aux dashboards/métriques) | Haute |
-| Pas d'authentification applicative (API backend ouverte) | Moyen (cohérent avec le périmètre démo actuel) | Moyenne |
-| Absence de NetworkPolicy | Faible à moyen (mouvement latéral en cas de compromission d'un pod) | Moyenne |
-| HSQLDB embarqué (pas de chiffrement au repos, pas de gestion d'accès dédiée) | Faible (démonstration uniquement) | Basse — non représentatif d'une cible de production |
-| Token SonarCloud potentiellement exposé | À confirmer | Haute (à vérifier immédiatement) |
-
-## 10. Recommandations
-
-| Recommandation | Bénéfice attendu |
-|---|---|
-| Remplacer `AdministratorAccess` par une policy IAM scoping strictement les actions Terraform nécessaires | Réduction drastique de la surface d'attaque en cas de compromission du token CI |
-| Restreindre l'accès à l'API EKS par IP (ou mettre en place un VPN/bastion) | Suppression de l'exposition publique inutile |
-| Définir `GRAFANA_ADMIN_PASSWORD` comme variable CI/CD protégée et régénérer le mot de passe par défaut | Fermer un accès non autorisé simple à exploiter |
-| Confirmer la régénération du token SonarCloud potentiellement exposé | Éviter une compromission déjà identifiée mais non close |
-| Ajouter Spring Security (a minima une authentification basique ou API key) avant toute exposition réelle | Fermer l'accès non authentifié actuel à l'API |
-| Ajouter des NetworkPolicy Kubernetes (namespace `orion` isolé du namespace `monitoring`) | Limiter le mouvement latéral en cas de compromission d'un pod |
-| Ajouter Gitleaks (détection de secrets committés par erreur) au pipeline | Filet de sécurité supplémentaire, déjà identifié dans le plan de sécurité initial mais non implémenté |
+| Item | Risque | Priorité | Statut |
+|---|---|---|---|
+| Pas d'authentification applicative (API backend ouverte) | Moyen (cohérent avec le périmètre démo actuel) | Moyenne | ⚠️ Assumé |
+| Absence de NetworkPolicy | Faible à moyen (mouvement latéral en cas de compromission d'un pod) | Moyenne | ⚠️ Assumé |
+| HSQLDB embarqué (pas de chiffrement au repos, pas de gestion d'accès dédiée) | Faible (démonstration uniquement) | Basse | ⚠️ Assumé — non représentatif d'une cible de production |

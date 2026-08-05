@@ -112,12 +112,12 @@ Ce playbook (idempotent, rejouable sans risque) crée :
 ```bash
 helm upgrade --install orion helm/orion/ --namespace orion \
   --set backend.tag="<version>" --set frontend.tag="<version>" \
-  --rollback-on-failure --timeout 5m
+  --atomic --timeout 5m
 ```
 
-Remplace `<version>` par le tag d'image souhaité (voir les tags disponibles sur le registre GitLab, ou `latest`).
+Remplacer `<version>` par le tag d'image souhaité (voir les tags disponibles sur le registre GitLab, ou `latest`).
 
-Le flag `--rollback-on-failure` garantit un retour automatique à la version stable précédente en cas d'échec du déploiement — voir [`ARCHITECTURE.md` §6.1](./ARCHITECTURE.md#61-mécanisme-de-rollback-applicatif) pour la validation de ce mécanisme en conditions réelles.
+Le flag `--atomic` garantit un retour automatique à la version stable précédente en cas d'échec du déploiement — voir [`ARCHITECTURE.md` §6.1](./ARCHITECTURE.md#61-mécanisme-de-rollback-applicatif) pour la validation de ce mécanisme en conditions réelles.
 
 ## Déploiement applicatif
 

@@ -133,12 +133,12 @@ push / merge request sur GitLab
 
 ### 6.1. Mécanisme de rollback applicatif
 
-Le déploiement applicatif (job `deploy`) s'appuie sur le flag Helm `--rollback-on-failure` (remplaçant `--atomic`, deprecated) :
+Le déploiement applicatif (job `deploy`) s'appuie sur le flag Helm `--atomic` (remplaçant `--atomic`, deprecated) :
 
 ```yaml
 helm upgrade --install orion helm/orion/ --namespace orion
     --set backend.tag="$VERSION" --set frontend.tag="$VERSION"
-    --rollback-on-failure --timeout 5m
+    --atomic --timeout 5m
 ```
 
 Si les pods de la nouvelle révision ne deviennent pas `Ready` dans le délai imparti (image inexistante, crash au démarrage, etc.), Helm **annule automatiquement la révision en échec et restaure la dernière révision stable**, sans intervention manuelle.
@@ -187,14 +187,13 @@ Ce mécanisme remplace le rollback Ansible/health-check mis en place en Partie 1
 | Verrouillage S3 natif plutôt que DynamoDB | Simplification pédagogique assumée (Terraform ≥ 1.10 uniquement) |
 | `terraform-apply` manuel | Garde-fou humain avant toute modification facturée de l'infrastructure |
 | Registre GitLab Container Registry conservé (pas d'ECR) | Évite un composant d'infrastructure supplémentaire à gérer |
-| Rollback applicatif géré nativement par Helm (`--rollback-on-failure`) | Testé et validé en conditions réelles sur EKS (déploiement d'un tag inexistant, retour automatique confirmé via `helm history`) |
+| Rollback applicatif géré nativement par Helm (`--atomic`) | Testé et validé en conditions réelles sur EKS (déploiement d'un tag inexistant, retour automatique confirmé via `helm history`) |
 
 ## 9. Limites d'architecture connues
 
 Cette architecture porte plusieurs simplifications assumées pour un contexte pédagogique, déjà détaillées dans `SECURITY.md` et `PERF-back.md`/`PERF-front.md` :
 
-- Endpoint API EKS public, sans VPN/bastion.
-- Utilisateur IAM `orion-terraform` avec `AdministratorAccess`.
+
 - HyperSQL embarqué, non représentatif d'une base de production.
 - Absence de Spring Boot Actuator (pas de métriques applicatives, probes en `tcpSocket`).
 - Pas d'autoscaling applicatif (HPA) ni de NetworkPolicy.

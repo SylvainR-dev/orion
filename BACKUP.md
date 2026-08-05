@@ -65,16 +65,8 @@ En cas de perte du cluster (destroy accidentel, corruption), ces fichiers JSON p
 ### Ce qu'il faudrait pour rendre une sauvegarde pertinente
 
 Si le projet évoluait vers une cible de production réelle, la sauvegarde de données applicatives nécessiterait au préalable :
-1. Migration vers une base persistante (PostgreSQL/RDS, déjà identifiée comme dette technique dans `SECURITY.md` et `PERF-back.md`).
+1. Migration vers une base persistante (PostgreSQL/RDS, déjà identifiée comme dette technique dans `SECURITY.md` et `PERF.md`).
 2. Ou, a minima, bascule de HyperSQL du mode mémoire vers le mode fichier (`jdbc:hsqldb:file:...`) avec un volume persistant (StorageClass EBS déjà disponible sur le cluster, réutilisable).
 3. Un job de sauvegarde du fichier/dump vers S3, sur le même modèle que le script `backup-terraform-state.sh`.
 
 Ce point est documenté comme axe d'amélioration future plutôt que traité dans le cadre actuel du projet.
-
-## 5. Synthèse pour la soutenance
-
-| Question probable | Réponse |
-|---|---|
-| "Vous sauvegardez quoi exactement ?" | Le state Terraform (double mécanisme S3) et les dashboards Grafana (export Git automatisé). |
-| "Et les données de l'application ?" | Volontairement exclues : base embarquée en mémoire, perdue à chaque cycle de toute façon, donc une sauvegarde n'aurait pas de sens sans changer d'abord l'architecture de persistance — ce qui est documenté comme amélioration future. |
-| "Pourquoi pas juste le versioning S3 natif, sans script ?" | Le versioning fonctionne mais n'offre pas de point de restauration nommé/daté facilement identifiable ; le script comble cet écart d'ergonomie opérationnelle. |
