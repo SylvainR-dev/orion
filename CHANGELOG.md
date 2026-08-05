@@ -1,3 +1,10 @@
+## [1.17.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.17.0...v1.17.1) (2026-08-05)
+
+
+### Bug Fixes
+
+* **ci:** remplace --atomic (deprecated) par --rollback-on-failure + docs: documente le mécanisme de rollback testé ([7a1d85d](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/7a1d85d8aeab693bf752b7d6b9c47a42abc9a83c))
+
 # [1.17.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.4...v1.17.0) (2026-08-05)
 
 
