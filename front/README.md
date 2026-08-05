@@ -1,27 +1,97 @@
-# MicroCRM
+# MicroCRM — Frontend
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.7.
+Interface web du CRM d'Orion, développée en Angular. Permet de gérer les personnes et les organisations, et de visualiser leurs rattachements.
 
-## Development server
+## Stack technique
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+| Composant | Technologie |
+|---|---|
+| Framework | Angular 17 (composants standalone, pas de `NgModule` central) |
+| Gestionnaire de dépendances | NPM |
+| Tests | Jasmine, Karma |
+| Serveur de fichiers statiques (production) | Caddy |
 
-## Code scaffolding
+## Prérequis
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+- **Node.js** (version compatible Angular 17, voir `package.json` pour la version exacte attendue)
+- **Angular CLI** (`npm install -g @angular/cli`, ou utiliser `npx ng` sans installation globale)
+
+## Installation
+
+```bash
+cd front
+npm install
+```
+
+## Lancer l'application en local
+
+L'application a besoin du backend démarré en parallèle (voir `back/README.md`) — l'URL de l'API est configurée dans `src/app/config.ts` (`API_BASE_URL`, par défaut `http://localhost:8080`).
+
+```bash
+ng serve
+```
+
+L'application est accessible sur **`http://localhost:4200`**.
+
+## Architecture
+
+Composants standalone Angular consommant une API REST classique (`/api/persons`, `/api/organizations`). La relation personne ↔ organisation est reconstruite côté client par filtrage (`PersonService.fetchPersonOrganizations`, `OrganizationService.fetchOrganizationPersons`), plutôt que de dépendre d'un endpoint backend dédié.
+
+Fichiers principaux :
+- `person.service.ts` / `organization.service.ts` — appels HTTP vers l'API
+- `person-details/`, `organization-details/` — pages de détail/édition
+- `main-dashboard/` — vue d'ensemble
+
+Documentation complète : voir [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+
+## Lancer les tests
+
+```bash
+ng test
+```
+
+Avec génération du rapport de couverture :
+
+```bash
+ng test --code-coverage --watch=false
+```
+
+Rapport HTML consultable dans `coverage/microcrm/index.html`.
+
+Couverture actuelle : **43 specs uniques, 98,46 % statements / 100 % branches / 95,34 % fonctions / 100 % lignes**. Détail complet et historique : voir [`TESTING-front.md`](./TESTING-front.md).
+
+> Karma est configuré en **ChromeHeadless** par défaut (`karma.conf.js`) pour fonctionner sans affichage graphique, aussi bien en local qu'en CI.
 
 ## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+```bash
+ng build
+```
 
-## Running unit tests
+Génère les fichiers statiques de production dans `dist/`, avec les optimisations Angular CLI standards (AOT, tree-shaking, minification).
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+## Docker
 
-## Running end-to-end tests
+L'image frontend fait partie d'un `Dockerfile` multi-stage unique à la racine du dépôt (stages `front-build` et `front`) : le build Angular est compilé puis servi par Caddy, sans Node.js dans l'image finale.
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+```bash
+docker build --target front -t microcrm-front .
+```
 
-## Further help
+Pour tester front + back ensemble en local sans dépendance à AWS, voir le `docker-compose.yml` à la racine du dépôt.
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+## Documentation complémentaire
+
+| Document | Contenu |
+|---|---|
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Architecture applicative détaillée, décisions techniques |
+| [`TESTING-front.md`](./TESTING-front.md) | Stratégie de tests, couverture, procédure complète |
+| [`PERF-front.md`](./PERF-front.md) | Optimisations de build, dimensionnement, limites de performance connues |
+| [`SECURITY.md`](./SECURITY.md) | Sécurité applicative, dette de sécurité |
+
+## Points de vigilance connus
+
+- Pas d'audit de performance formalisé (Lighthouse CI, Core Web Vitals) à ce stade.
+- Pas de monitoring de performance côté navigateur (RUM).
+
+Détail complet dans les documents ci-dessus.
