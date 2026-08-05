@@ -1,3 +1,10 @@
+# [1.18.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.17.1...v1.18.0) (2026-08-05)
+
+
+### Features
+
+* **backup:** ajoute le script de snapshot du state Terraform et documente la stratégie de sauvegarde ([ee8bc4b](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/ee8bc4bf549a54f25e2139ea8ca494f576f5f2a7))
+
 ## [1.17.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.17.0...v1.17.1) (2026-08-05)
 
 
