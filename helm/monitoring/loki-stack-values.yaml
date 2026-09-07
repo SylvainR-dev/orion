@@ -5,7 +5,6 @@ grafana:
   sidecar:
     datasources:
       enabled: false
-
 # --- Loki ---
 loki:
   # Mode single binary / filesystem : pas de mode distribué ni d'object
@@ -13,34 +12,31 @@ loki:
   # avec l'esprit pédagogique du projet.
   persistence:
     enabled: true
-    storageClassName: ebs-gp3
+    storageClassName: local-path
     accessModes: ["ReadWriteOnce"]
     size: 8Gi
-
   resources:
+    # Requests réduites au strict nécessaire (nœud t3.small contraint).
     requests:
-      cpu: 50m
-      memory: 128Mi
+      cpu: 20m
+      memory: 64Mi
     limits:
-      cpu: 300m
-      memory: 512Mi
-
+      cpu: 150m
+      memory: 256Mi
   config:
     # Rétention alignée sur celle de Prometheus (2 jours) pour rester
     # cohérent et limiter la consommation de stockage/RAM.
     table_manager:
       retention_deletes_enabled: true
       retention_period: 48h
-
     limits_config:
       retention_period: 48h
-
 # --- Promtail (agent de collecte, léger, tourne en DaemonSet sur chaque nœud) ---
 promtail:
   resources:
     requests:
-      cpu: 20m
-      memory: 32Mi
+      cpu: 10m
+      memory: 16Mi
     limits:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 50m
+      memory: 64Mi

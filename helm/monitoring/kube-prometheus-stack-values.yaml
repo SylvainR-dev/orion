@@ -2,54 +2,49 @@
 # ça libère de la RAM immédiatement sur des nœuds déjà contraints.
 alertmanager:
   enabled: false
-
 # --- Prometheus ---
 prometheus:
   prometheusSpec:
     # Rétention réduite (2 jours au lieu des 10j+ par défaut) : moins de
     # pression sur le stockage et la RAM, suffisant pour la démo/soutenance.
     retention: 2d
-
     resources:
+      # Requests serrées au strict nécessaire : nœud t3.small (2Gi RAM),
+      # partagé avec l'appli + le reste de la stack PLG + k3s lui-même
+      # (~900Mi-1.3Gi déjà utilisés par k3s/OS seuls).
       requests:
-        cpu: 100m
-        memory: 256Mi
+        cpu: 50m
+        memory: 128Mi
       limits:
-        cpu: 500m
-        memory: 512Mi
-
+        cpu: 300m
+        memory: 256Mi
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: ebs-gp3
+          storageClassName: local-path
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
               storage: 8Gi
-
     # Un seul replica : pas de HA nécessaire pour ce contexte.
     replicas: 1
-
 # --- Grafana ---
 grafana:
   resources:
     requests:
-      cpu: 100m
-      memory: 256Mi
+      cpu: 30m
+      memory: 96Mi
     limits:
-      cpu: 500m
-      memory: 512Mi
-
+      cpu: 200m
+      memory: 192Mi
   persistence:
     enabled: true
-    storageClassName: ebs-gp3
+    storageClassName: local-path
     accessModes: ["ReadWriteOnce"]
     size: 2Gi
-
   # Mot de passe admin à surcharger via --set ou variable CI/CD au moment
   # du helm install/upgrade (jamais commité en clair dans ce fichier).
   adminPassword: ""
-
   # Datasource Loki ajoutée manuellement ici (plutôt que via le sidecar
   # auto-généré de loki-stack) pour forcer isDefault: false et éviter le
   # conflit avec Prometheus (déjà isDefault) qui faisait planter Grafana
@@ -60,20 +55,12 @@ grafana:
       url: http://loki-stack:3100
       access: proxy
       isDefault: false
-
 # --- Composants annexes ---
-# kube-state-metrics et node-exporter sont légers, gardés avec des limites
-# explicites plutôt que les défauts (parfois plus généreux que nécessaire).
+# kube-state-metrics et node-exporter réduits au minimum. Si ça reste trop
+# juste après déploiement réel, ce sont les deux premiers candidats à
+# désactiver entièrement (enabled: false) plutôt qu'à réduire davantage -
+# en dessous de ces seuils ils crashloop.
 kube-state-metrics:
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      cpu: 50m
-      memory: 128Mi
-
-prometheus-node-exporter:
   resources:
     requests:
       cpu: 10m
@@ -81,3 +68,11 @@ prometheus-node-exporter:
     limits:
       cpu: 50m
       memory: 64Mi
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 30m
+      memory: 32Mi

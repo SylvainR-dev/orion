@@ -6,3 +6,5 @@ terraform/*.tfstate
 terraform/*.tfstate.backup
 terraform/.terraform.lock.hcl
 ansible/registry-credentials.yml
+terraform/terraform.tfvars
+ansible/kubeconfig-orion.yaml

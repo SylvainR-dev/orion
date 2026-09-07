@@ -1,116 +1,93 @@
-data "aws_availability_zones" "available" {
-  state = "available"
+# ---------------------------------------------------------------------------
+# Orion - Infrastructure "home lab" : une seule instance EC2 exécutant k3s
+# Remplace les anciens modules terraform-aws-modules/vpc + eks
+# ---------------------------------------------------------------------------
+
+# On réutilise le VPC par défaut du compte AWS plutôt que d'en provisionner
+# un dédié : plus de NAT Gateway, plus de coût réseau supplémentaire.
+data "aws_vpc" "default" {
+  default = true
 }
 
-locals {
-  azs = slice(data.aws_availability_zones.available.names, 0, 2)
-}
-
-# --- Réseau ---
-# NAT gateway unique (pas un par AZ) pour limiter les coûts : suffisant
-# pour ce projet, à revoir si besoin de haute disponibilité renforcée.
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.0"
-
-  name = "${var.cluster_name}-vpc"
-  cidr = var.vpc_cidr
-
-  azs             = local.azs
-  private_subnets = [for i, az in local.azs : cidrsubnet(var.vpc_cidr, 8, i)]
-  public_subnets  = [for i, az in local.azs : cidrsubnet(var.vpc_cidr, 8, i + 100)]
-
-  enable_nat_gateway   = true
-  single_nat_gateway   = true
-  enable_dns_hostnames = true
-
-  # Tags requis par EKS pour que le contrôleur de load balancer AWS
-  # sache où placer les Ingress/Services de type LoadBalancer
-  public_subnet_tags = {
-    "kubernetes.io/role/elb"                    = "1"
-    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-  }
-  private_subnet_tags = {
-    "kubernetes.io/role/internal-elb"           = "1"
-    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
   }
 }
 
-# --- Cluster EKS ---
-module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.0"
+# AMI Debian 12 (cohérent avec le reste du projet, l'équipe Ops maîtrise Debian)
+data "aws_ami" "debian" {
+  most_recent = true
+  owners      = ["136693071363"] # Debian officiel
 
-  cluster_name    = var.cluster_name
-  cluster_version = var.cluster_version
-
-  vpc_id     = module.vpc.vpc_id
-  subnet_ids = module.vpc.private_subnets
-
-  # Accès public à l'API du cluster activé pour simplifier (pas de VPN/bastion
-  # à mettre en place pour ce projet). À restreindre par IP ou désactiver
-  # en environnement réellement en production.
-  cluster_endpoint_public_access = true
-
-  # Nécessaire pour l'IRSA (IAM Roles for Service Accounts), utilisé ci-dessous
-  # par le rôle du driver CSI EBS (persistance des volumes pour la stack PLG).
-  enable_irsa = true
-
-  eks_managed_node_groups = {
-    default = {
-      instance_types = [var.node_instance_type]
-      capacity_type  = "ON_DEMAND"
-
-      min_size     = var.node_min_size
-      max_size     = var.node_max_size
-      desired_size = var.node_desired_size
-
-      # Mode CPU Unlimited : évite le throttling en cas de session de travail
-      # prolongée dépassant la baseline t3, sans changer la taille d'instance
-      # (justifié par un usage en sessions courtes, pas de charge continue 24/7).
-      credit_specification = {
-        cpu_credits = "unlimited"
-      }
-    }
-  }
-
-  # Addon EKS gérant la création des volumes EBS pour les PersistentVolumeClaims
-  # (nécessaire pour la persistance de Prometheus/Loki/Grafana - stack PLG).
-  cluster_addons = {
-    aws-ebs-csi-driver = {
-      most_recent              = true
-      service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
-    }
-  }
-
-  # Donne à l'utilisateur/rôle qui exécute Terraform les droits admin sur le cluster
-  enable_cluster_creator_admin_permissions = true
-
-  tags = {
-    Project = "orion"
-    Managed = "terraform"
+  filter {
+    name   = "name"
+    values = ["debian-12-amd64-*"]
   }
 }
 
-# --- Rôle IAM pour le driver CSI EBS (IRSA) ---
-# Distinct du rôle orion-terraform (celui-ci sert au runtime du cluster pour
-# créer/attacher des volumes EBS, pas au provisioning de l'infrastructure).
-module "ebs_csi_irsa_role" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.0"
+resource "aws_security_group" "orion_ec2" {
+  name        = "orion-ec2-sg"
+  description = "Acces SSH + API k3s + HTTP applicatif pour instance Orion"
+  vpc_id      = data.aws_vpc.default.id
 
-  role_name             = "orion-ebs-csi-driver"
-  attach_ebs_csi_policy = true
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.admin_ip_cidr]
+  }
 
-  oidc_providers = {
-    main = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
-    }
+  ingress {
+    description = "API k3s (kubectl distant)"
+    from_port   = 6443
+    to_port     = 6443
+    protocol    = "tcp"
+    cidr_blocks = [var.admin_ip_cidr]
+  }
+
+  ingress {
+    description = "Acces applicatif front-back NodePort ou port-forward de test"
+    from_port   = 8080
+    to_port     = 8090
+    protocol    = "tcp"
+    cidr_blocks = [var.admin_ip_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
+    Name    = "orion-ec2-sg"
     Project = "orion"
-    Managed = "terraform"
+  }
+}
+
+resource "aws_key_pair" "orion" {
+  key_name   = "orion-ec2-key"
+  public_key = file(var.ssh_public_key_path)
+}
+
+resource "aws_instance" "orion" {
+  ami                    = data.aws_ami.debian.id
+  instance_type          = var.instance_type
+  subnet_id              = element(data.aws_subnets.default.ids, 0)
+  vpc_security_group_ids = [aws_security_group.orion_ec2.id]
+  key_name               = aws_key_pair.orion.key_name
+
+  root_block_device {
+    volume_size = 30 # k3s + images Docker + PLG stack : on garde de la marge
+    volume_type = "gp3"
+  }
+
+  tags = {
+    Name    = "orion-ec2"
+    Project = "orion"
   }
 }

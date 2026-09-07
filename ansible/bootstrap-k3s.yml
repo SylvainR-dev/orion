@@ -1,0 +1,49 @@
+---
+# Remplace la connexion "aws eks update-kubeconfig" par une installation
+# k3s directe sur l'instance EC2, puis récupération du kubeconfig en local.
+#
+# Usage : ansible-playbook -i inventory-ec2.ini bootstrap-k3s.yml
+
+- name: Installer k3s sur l'instance Orion
+  hosts: orion_ec2
+  become: true
+  tasks:
+    - name: Installer k3s (idempotent - ne réinstalle pas si déjà présent)
+      ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Attendre que le kubeconfig k3s soit généré
+      ansible.builtin.wait_for:
+        path: /etc/rancher/k3s/k3s.yaml
+        timeout: 60
+
+    - name: Rendre le kubeconfig lisible (pour le fetch)
+      ansible.builtin.file:
+        path: /etc/rancher/k3s/k3s.yaml
+        mode: "0644"
+
+    - name: Rapatrier le kubeconfig en local
+      ansible.builtin.fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "./kubeconfig-orion.yaml"
+        flat: true
+
+- name: Adapter le kubeconfig rapatrié pour un accès distant
+  hosts: orion_ec2
+  connection: local
+  become: false
+  tasks:
+    - name: Remplacer 127.0.0.1 par l'IP publique de l'instance dans le kubeconfig
+      ansible.builtin.replace:
+        path: "./kubeconfig-orion.yaml"
+        regexp: "127\\.0\\.0\\.1"
+        replace: "{{ ansible_host }}"
+      run_once: true
+
+    - name: Rappel - variable à exporter avant usage
+      ansible.builtin.debug:
+        msg: >
+          kubeconfig-orion.yaml généré. Utilise-le avec :
+          export KUBECONFIG=$(pwd)/kubeconfig-orion.yaml puis kubectl get nodes
+      run_once: true

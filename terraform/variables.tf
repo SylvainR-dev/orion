@@ -1,47 +1,22 @@
 variable "aws_region" {
-  description = "Région AWS de déploiement"
+  description = "Région AWS"
   type        = string
   default     = "eu-west-3"
 }
 
-variable "cluster_name" {
-  description = "Nom du cluster EKS"
-  type        = string
-  default     = "orion-eks"
-}
-
-variable "cluster_version" {
-  description = "Version de Kubernetes pour le control plane EKS"
-  type        = string
-  default     = "1.34"
-}
-
-variable "vpc_cidr" {
-  description = "Bloc CIDR du VPC"
-  type        = string
-  default     = "10.0.0.0/16"
-}
-
-variable "node_instance_type" {
-  description = "Type d'instance EC2 pour les nœuds du cluster (choisi pour rester dans un budget raisonnable)"
+variable "instance_type" {
+  description = "Type d'instance EC2. t3.small confirmé fonctionnel sur ce compte (t3.medium a déjà été bloqué en contexte EKS, à retester ici prudemment si besoin de plus de RAM)."
   type        = string
   default     = "t3.small"
 }
 
-variable "node_desired_size" {
-  description = "Nombre de nœuds souhaité"
-  type        = number
-  default     = 3
+variable "admin_ip_cidr" {
+  description = "CIDR autorisé pour SSH / API k3s / accès applicatif (ex: \"1.2.3.4/32\"). Ne JAMAIS mettre 0.0.0.0/0 ici."
+  type        = string
 }
 
-variable "node_min_size" {
-  description = "Nombre minimum de nœuds"
-  type        = number
-  default     = 1
-}
-
-variable "node_max_size" {
-  description = "Nombre maximum de nœuds"
-  type        = number
-  default     = 3
+variable "ssh_public_key_path" {
+  description = "Chemin local vers la clé publique SSH à injecter dans l'instance"
+  type        = string
+  default     = "~/.ssh/orion-ec2-key.pub"
 }
