@@ -184,7 +184,7 @@ ansible-bootstrap:
     - apk add --no-cache py3-pip
     - pip install --break-system-packages ansible kubernetes
     - ansible-galaxy collection install -r ansible/requirements.yml
-    - aws eks update-kubeconfig --region eu-west-3 --name orion-eks
+    - export KUBECONFIG=$KUBE_CONFIG
   script:
     - ansible-playbook -i ansible/inventory.ini ansible/bootstrap-k8s.yml
         -e "registry_username=$REGISTRY_USERNAME"
@@ -207,7 +207,7 @@ deploy:
         echo "Aucune nouvelle version détectée, skip du déploiement."
         exit 0
       fi
-    - aws eks update-kubeconfig --region eu-west-3 --name orion-eks
+    - export KUBECONFIG=$KUBE_CONFIG
   script:
     - helm upgrade --install orion helm/orion/ --namespace orion
         --set backend.tag="$VERSION" --set frontend.tag="$VERSION"
@@ -218,7 +218,7 @@ monitoring-deploy:
   image:
     name: alpine/k8s:1.30.2
   script:
-    - aws eks update-kubeconfig --region eu-west-3 --name orion-eks
+    - export KUBECONFIG=$KUBE_CONFIG
     - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     - helm repo add grafana https://grafana.github.io/helm-charts
     - helm repo update
@@ -269,7 +269,7 @@ dora-metrics:
   before_script:
     - apk add --no-cache python3 py3-pip
     - pip install --break-system-packages requests prometheus_client
-    - aws eks update-kubeconfig --region eu-west-3 --name orion-eks
+    - export KUBECONFIG=$KUBE_CONFIG
     - kubectl -n monitoring port-forward svc/prometheus-pushgateway 9091:9091 &
     - sleep 3
   script:
@@ -285,7 +285,7 @@ export-dashboards:
     GRAFANA_URL: "http://localhost:3000"
   before_script:
     - apk add --no-cache curl jq git
-    - aws eks update-kubeconfig --region eu-west-3 --name orion-eks
+    - export KUBECONFIG=$KUBE_CONFIG
     - kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80 &
     - sleep 3
   script:
