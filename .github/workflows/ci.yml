@@ -1,0 +1,285 @@
+name: CI
+
+# GitLab: workflow:rules (MR + branche main)
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# GitLab: variables globales
+env:
+  SONAR_USER_HOME: ${{ github.workspace }}/.sonar
+  SONAR_HOST_URL: https://sonarcloud.io
+
+jobs:
+  # ---------- stage: version ----------
+  version:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      version: ${{ steps.ver.outputs.VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # GIT_DEPTH: "0"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # remplace GITLAB_TOKEN
+        run: |
+          npx semantic-release
+          test -f version.env || echo "VERSION=" > version.env
+      # GitLab: artifacts:reports:dotenv -> ici: output du job
+      - id: ver
+        run: cat version.env >> "$GITHUB_OUTPUT"
+
+  # ---------- stage: test ----------
+  # GitLab: la stage test attend la stage version (ici needs + !failure
+  # pour tourner aussi quand "version" est skippé, ex: sur une PR)
+  test-front:
+    needs: [version]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Tests Karma + couverture
+        working-directory: front
+        run: |
+          npm ci
+          CHROME_BIN=/usr/bin/google-chrome npx @angular/cli test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox --code-coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-front
+          path: front/coverage/microcrm/lcov.info
+          retention-days: 1         # expire_in: 1 hour
+
+  test-back:
+    needs: [version]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17          # image gradle:jdk17
+      - name: Tests JUnit + Jacoco
+        working-directory: back
+        run: ./gradlew test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-back
+          path: back/build/reports/jacoco/test/jacocoTestReport.xml
+          retention-days: 1
+
+  # ---------- stage: quality ----------
+  sonarqube-back:
+    needs: [test-back]              # needs + artifacts: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/cache@v4      # cache: .sonar/cache
+        with:
+          path: .sonar/cache
+          key: sonarqube-back
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-back
+          path: back/build/reports/jacoco/test/
+      - name: Analyse Sonar backend
+        working-directory: back
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./gradlew sonar
+
+  sonarqube-front:
+    needs: [test-front]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/cache@v4
+        with:
+          path: .sonar/cache
+          key: sonarqube-front
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-front
+          path: front/coverage/microcrm/
+      # GitLab: image sonarsource/sonar-scanner-cli + "sonar-scanner" dans front/
+      # Ici: l'action officielle qui lance le même scanner (lit
+      # front/sonar-project.properties) et gère la détection des PR.
+      - uses: SonarSource/sonarqube-scan-action@v5
+        with:
+          projectBaseDir: front
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ---------- stage: build ----------
+  # GitLab: la stage build attend la stage quality
+  build-front:
+    needs: [sonarqube-front, sonarqube-back]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - working-directory: front
+        run: |
+          npm ci
+          npx @angular/cli build --optimization
+
+  build-back:
+    needs: [sonarqube-front, sonarqube-back]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - working-directory: back
+        run: ./gradlew build
+
+  # ---------- stage: publish ----------
+  # GitLab: "needs: version" uniquement -> ce job démarre dès que "version"
+  # est fini, sans attendre les tests (comportement conservé tel quel).
+  publish-images:
+    needs: [version]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.version.outputs.version != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      TRIVY_VERSION: "0.54.1"
+      # $CI_REGISTRY_IMAGE -> GHCR (doit être en minuscules)
+      IMAGE: ghcr.io/sylvainr-dev/orion
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # $CI_REGISTRY_USER / $CI_REGISTRY_PASSWORD
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Pas de docker-in-docker: le runner GitHub a déjà Docker.
+      - name: front
+        run: |
+          docker build --target front -t "$IMAGE/front:$VERSION" -t "$IMAGE/front:latest" .
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$IMAGE/front:$VERSION"
+          docker push "$IMAGE/front:$VERSION"
+          docker push "$IMAGE/front:latest"
+      - name: back
+        run: |
+          docker build --target back -t "$IMAGE/back:$VERSION" -t "$IMAGE/back:latest" .
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$IMAGE/back:$VERSION"
+          docker push "$IMAGE/back:$VERSION"
+          docker push "$IMAGE/back:latest"
+      - name: standalone
+        run: |
+          docker build --target standalone -t "$IMAGE/standalone:$VERSION" -t "$IMAGE/standalone:latest" .
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$IMAGE/standalone:$VERSION"
+          docker push "$IMAGE/standalone:$VERSION"
+          docker push "$IMAGE/standalone:latest"
+
+  # ---------- stage: infra ----------
+  terraform-plan:
+    needs: [build-front, build-back, publish-images]   # attend les stages précédentes
+    if: ${{ !failure() && !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: eu-west-3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # GitLab: image hashicorp/terraform:1.15 + entrypoint [""]
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15"
+          terraform_wrapper: false
+      - working-directory: terraform
+        run: |
+          terraform init
+          terraform plan
+
+  # terraform-apply (when: manual) -> voir manual.yml
+
+  ansible-bootstrap:
+    # GitLab: needs terraform-apply (optional) -> terraform-apply est manuel,
+    # donc ce job tourne à chaque push sur main.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Installation Ansible
+        run: |
+          pip install ansible kubernetes
+          ansible-galaxy collection install -r ansible/requirements.yml
+      # GitLab: variable de type File -> ici un secret écrit dans un fichier
+      - name: Kubeconfig
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          echo "$KUBE_CONFIG" > "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+      - run: |
+          ansible-playbook -i ansible/inventory.ini ansible/bootstrap-k8s.yml \
+            -e "registry_username=${{ secrets.REGISTRY_USERNAME }}" \
+            -e "registry_password=${{ secrets.REGISTRY_PASSWORD }}"
+
+  # ---------- stage: deploy ----------
+  deploy:
+    needs: [version, publish-images, ansible-bootstrap]
+    if: ${{ !failure() && !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.version.outputs.version != '' }}
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Kubeconfig
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          echo "$KUBE_CONFIG" > "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+      - run: |
+          helm upgrade --install orion helm/orion/ --namespace orion \
+            --set backend.tag="$VERSION" --set frontend.tag="$VERSION" \
+            --atomic --timeout 5m
