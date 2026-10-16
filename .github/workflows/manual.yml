@@ -1,0 +1,142 @@
+name: Jobs manuels
+
+# GitLab: jobs "when: manual" + job dora-metrics planifié
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Job à lancer"
+        type: choice
+        required: true
+        options:
+          - terraform-apply
+          - monitoring-deploy
+          - dora-metrics
+          - export-dashboards
+  schedule:
+    - cron: "0 6 * * 1"     # à adapter: c'était un schedule défini dans l'UI GitLab
+
+jobs:
+  terraform-apply:
+    if: github.event_name == 'workflow_dispatch' && inputs.job == 'terraform-apply'
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: eu-west-3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15"
+          terraform_wrapper: false
+      - working-directory: terraform
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+  monitoring-deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.job == 'monitoring-deploy'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kubeconfig
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          echo "$KUBE_CONFIG" > "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+      - name: Déploiement monitoring
+        env:
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+          helm upgrade --install loki-stack grafana/loki-stack \
+            --namespace monitoring \
+            -f helm/monitoring/loki-stack-values.yaml \
+            --wait --timeout 10m
+          helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            -f helm/monitoring/kube-prometheus-stack-values.yaml \
+            --set grafana.adminPassword=$GRAFANA_ADMIN_PASSWORD \
+            --wait --timeout 10m
+          helm upgrade --install prometheus-pushgateway prometheus-community/prometheus-pushgateway \
+            --namespace monitoring \
+            -f helm/monitoring/pushgateway-values.yaml \
+            --wait --timeout 5m
+          for f in helm/monitoring/dashboards/*.json; do
+            [ -e "$f" ] || continue
+            name=$(basename "$f" .json)
+            kubectl create configmap "grafana-dashboard-$name" \
+              --from-file="dashboard.json=$f" -n monitoring \
+              --dry-run=client -o yaml | \
+              kubectl label --local -f - grafana_dashboard=1 -o yaml | \
+              kubectl apply -f -
+          done
+
+  dora-metrics:
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.job == 'dora-metrics')
+    runs-on: ubuntu-latest
+    env:
+      PUSHGATEWAY_URL: "http://localhost:9091"
+      DORA_WINDOW_DAYS: "30"
+      DORA_GITLAB_TOKEN: ${{ secrets.DORA_GITLAB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kubeconfig
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          echo "$KUBE_CONFIG" > "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+      - name: Préparation
+        run: |
+          pip install requests prometheus_client
+          kubectl -n monitoring port-forward svc/prometheus-pushgateway 9091:9091 &
+          sleep 3
+      - run: python3 scripts/dora_metrics.py
+
+  export-dashboards:
+    if: github.event_name == 'workflow_dispatch' && inputs.job == 'export-dashboards'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write           # remplace GIT_PUSH_TOKEN
+    env:
+      GRAFANA_URL: "http://localhost:3000"
+      GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Kubeconfig
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          echo "$KUBE_CONFIG" > "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+      - name: Préparation
+        run: |
+          kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80 &
+          sleep 3
+      - name: Export des dashboards
+        run: |
+          mkdir -p helm/monitoring/dashboards
+          UIDS=$(curl -s -u admin:$GRAFANA_ADMIN_PASSWORD "$GRAFANA_URL/api/search?type=dash-db" | jq -r '.[].uid')
+          for uid in $UIDS; do
+            SLUG=$(curl -s -u admin:$GRAFANA_ADMIN_PASSWORD "$GRAFANA_URL/api/dashboards/uid/$uid" | jq -r '.dashboard.title' | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9]+#-#g; s#^-+|-+$##g')
+            curl -s -u admin:$GRAFANA_ADMIN_PASSWORD "$GRAFANA_URL/api/dashboards/uid/$uid" | jq '.dashboard' > "helm/monitoring/dashboards/${SLUG}.json"
+          done
+          git config user.email "ci@orion.local"
+          git config user.name "GitHub Actions"
+          git add helm/monitoring/dashboards/
+          if git diff --cached --quiet; then
+            echo "Aucun changement de dashboard à sauvegarder."
+          else
+            git commit -m "chore(monitoring): sauvegarde automatique des dashboards Grafana [skip ci]"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
