@@ -1,3 +1,19 @@
+# [1.19.0](https://github.com/SylvainR-dev/orion/compare/v1.18.1...v1.19.0) (2026-11-04)
+
+
+### Bug Fixes
+
+* **ci:** remplace aws eks update-kubeconfig par le kubeconfig k3s (variable KUBE_CONFIG) ([f59f5ea](https://github.com/SylvainR-dev/orion/commit/f59f5ea553dd3b1ea8dd9c0b20d3f18913430f2b))
+* **monitoring:** augmente les limites de Grafana (demarrage trop lent, probe liveness en echec) ([9efc8cb](https://github.com/SylvainR-dev/orion/commit/9efc8cb17357c3d31958f5a9f18f23cdf1d351f3))
+
+
+### Features
+
+* **dora:** metriques DORA depuis GitHub Actions, cible make dora ([9826ce8](https://github.com/SylvainR-dev/orion/commit/9826ce832d26380d7cd2c885f3e9ee04cae71fe9))
+* **helm:** images Orion sur GHCR, suppression du secret de pull et du bootstrap k8s ([b206a7b](https://github.com/SylvainR-dev/orion/commit/b206a7bac6e0eabee5bbc71d9f77deca28df3bde))
+* **infra:** Makefile up/down/install et playbook k3s pour l'instance Orion ([96887d5](https://github.com/SylvainR-dev/orion/commit/96887d5070136e328be40cf4204b08b9c45acc2b))
+* **infra:** migre EKS vers EC2+k3s (terraform, ansible, helm, gitignore) ([3a6c8f9](https://github.com/SylvainR-dev/orion/commit/3a6c8f9daaabc012e177166b447749d9fb8dadd6))
+
 ## [1.18.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.18.0...v1.18.1) (2026-08-05)
 
 
