@@ -49,7 +49,7 @@ jacocoTestReport {
 
 sonar {
 	properties {
-		property "sonar.projectKey", "sylvainr-dev-group_projet-6-demarche-devops"
-		property "sonar.organization", "sylvainr-dev-group"
+		property "sonar.projectKey", "sylvainr-dev_microcrm-backend"
+		property "sonar.organization", "sylvainr-dev"
 	}
 }
