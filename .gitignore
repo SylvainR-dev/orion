@@ -1,10 +1,11 @@
 node_modules/
 
 # Terraform
-terraform/.terraform/
-terraform/*.tfstate
-terraform/*.tfstate.backup
-terraform/.terraform.lock.hcl
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
+# Secrets et fichiers locaux
 ansible/registry-credentials.yml
-terraform/terraform.tfvars
 ansible/kubeconfig-orion.yaml
