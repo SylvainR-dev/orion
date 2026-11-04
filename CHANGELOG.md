@@ -1,3 +1,10 @@
+## [1.19.1](https://github.com/SylvainR-dev/orion/compare/v1.19.0...v1.19.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** tomcat 10.1.59 et exception Trivy documentee pour CVE-2026-47884 ([6fa074f](https://github.com/SylvainR-dev/orion/commit/6fa074fc4f8902493d4d6c73ebe2616cee8a8ec4))
+
 # [1.19.0](https://github.com/SylvainR-dev/orion/compare/v1.18.1...v1.19.0) (2026-11-04)
 
 
