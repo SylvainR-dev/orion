@@ -1,5 +1,12 @@
 # Stratégie et exécution des tests — Backend (Spring Boot / Gradle)
 
+## Historique et évolution
+
+**Évolution de la stratégie de tests du backend.** À l'origine, le backend ne comptait qu'un test de démarrage et un test de repository, et SonarCloud affichait 0 % de couverture : le plugin JaCoCo n'était pas configuré, et le rapport généré dans un job n'était pas transmis au job d'analyse (chaque job a son propre espace de travail). Les deux problèmes ont été corrigés (plugin JaCoCo, passage du rapport en artefact). La refonte en architecture Controller / Service / Repository a ensuite permis de tester chaque couche séparément (tests de repository, tests de service avec Mockito, tests de contrôleur), pour atteindre 94 % de couverture des instructions et 50 % des branches. Cette refonte a aussi fait apparaître un vrai bug grâce à un test d'intégration : une cascade JPA supprimait des personnes en supprimant leur organisation. La chaîne de tests a ensuite été migrée de GitLab CI vers GitHub Actions en conservant les mêmes jobs et dépendances.
+
+> Les sections suivantes décrivent encore en partie l'état précédent (EKS, GitLab CI) et sont en cours de mise à jour.
+
+
 Ce document décrit la stratégie de tests automatisés du backend MicroCRM (Orion), les taux de couverture actuels, ainsi que les commandes permettant de les exécuter localement et dans le pipeline CI/CD.
 
 ## 1. Vue d'ensemble

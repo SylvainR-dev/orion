@@ -1,5 +1,12 @@
 # Stratégie de sauvegarde — MicroCRM (Orion)
 
+## Historique et évolution
+
+**Évolution de la stratégie de sauvegarde.** Au départ, l'état Terraform était local à mon poste, sans historique : un disque perdu ou un second poste de travail aurait signifié repartir d'un état vide et recréer une infrastructure déjà existante. Il a été migré vers un backend S3 distant avec versioning et verrouillage natif, puis complété par un script de snapshot horodaté. Le passage d'EKS à k3s a changé la nature des données à protéger : il n'y a plus de volumes EBS gérés par Kubernetes mais des volumes locaux (`local-path`) sur le disque de l'instance, et la base de l'application est HSQLDB embarquée, donc non persistante. Avant toute opération destructive sur une instance (par exemple retirer k3s), je prends maintenant un snapshot EBS. Les images, auparavant conservées dans le registre GitLab, sont désormais publiées sur GitHub Container Registry, taguées par version sémantique. L'infrastructure d'Orion utilise son propre état Terraform (clé `orion-k3s/terraform.tfstate`), isolé de celui des autres instances.
+
+> Les sections suivantes décrivent encore en partie l'état précédent (EKS, GitLab CI) et sont en cours de mise à jour.
+
+
 Ce document décrit ce qui est sauvegardé sur le projet, comment, et pourquoi certains éléments en sont volontairement exclus. Il complète `ARCHITECTURE.md` (section rollback) et `SECURITY.md`.
 
 ## 1. Vue d'ensemble
