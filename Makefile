@@ -23,8 +23,9 @@ up:
 # Ouvre le tunnel local 6443 -> API k3s de l'instance.
 tunnel:
 > ID=$$($(ID_CMD)); IP=$$($(IP_CMD)); \
+> [ "$$IP" != "None" ] || { echo "Instance eteinte : lance make up"; exit 1; }; \
 > ssh -S $(SOCK) -O exit admin@$$IP 2>/dev/null || true; rm -f $(SOCK); \
-> ssh -i $(KEY) -M -S $(SOCK) -f -N -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=accept-new -L 6443:127.0.0.1:6443 admin@$$IP; \
+> ssh -i $(KEY) -M -S $(SOCK) -f -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=4 -o StrictHostKeyChecking=accept-new -L 6443:127.0.0.1:6443 admin@$$IP; \
 > echo "Tunnel ouvert : 127.0.0.1:6443 -> $$IP"
 
 # Ferme le tunnel et ETEINT l'instance (le disque reste, plus de cout de calcul).
@@ -41,6 +42,7 @@ status:
 # Installe k3s sur l'instance (a faire une seule fois) et recupere le kubeconfig.
 install:
 > ID=$$($(ID_CMD)); IP=$$($(IP_CMD)); \
+> [ "$$IP" != "None" ] || { echo "Instance eteinte : lance make up"; exit 1; }; \
 > ansible-playbook -i "$$IP," -u admin --private-key $(KEY) -e ansible_python_interpreter=/usr/bin/python3 ansible/bootstrap-k3s.yml
 > chmod 600 ansible/kubeconfig-orion.yaml
 
@@ -57,3 +59,10 @@ deploy:
 >   --namespace orion --create-namespace \
 >   --set backend.tag=$$V --set frontend.tag=$$V \
 >   --atomic --timeout 5m
+
+.PHONY: dora
+
+# Calcule les metriques DORA depuis GitHub et les envoie au pushgateway (instance allumee).
+dora:
+> KUBECONFIG=$(CURDIR)/ansible/kubeconfig-orion.yaml kubectl -n monitoring port-forward svc/prometheus-pushgateway 9091:9091 > /dev/null & PF=$$!; sleep 3; \
+> PUSHGATEWAY_URL=http://localhost:9091 .venv/bin/python scripts/dora_metrics.py; RC=$$?; kill $$PF; exit $$RC

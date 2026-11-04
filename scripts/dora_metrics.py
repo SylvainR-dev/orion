@@ -4,16 +4,26 @@ from datetime import datetime, timezone, timedelta
 import requests
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 
-GITLAB_API = os.environ["CI_API_V4_URL"]
-PROJECT_ID = os.environ["CI_PROJECT_ID"]
-TOKEN = os.environ["DORA_GITLAB_TOKEN"]
+# API GitHub (remplace l'API GitLab). Le repo est public : le jeton est facultatif,
+# il releve seulement la limite d'appels (60/h sans jeton, 5000/h avec).
+GITHUB_API = "https://api.github.com"
+REPO = os.environ.get("GITHUB_REPOSITORY", "SylvainR-dev/orion")
+TOKEN = os.environ.get("GITHUB_TOKEN", "")
+# Job de la CI considere comme "livraison" (la CI s'arrete a la publication GHCR).
+DEPLOY_JOB_NAME = os.environ.get("DORA_DEPLOY_JOB", "publish-images")
 PUSHGATEWAY_URL = os.environ.get("PUSHGATEWAY_URL", "http://localhost:9091")
 WINDOW_DAYS = int(os.environ.get("DORA_WINDOW_DAYS", "30"))
 
-HEADERS = {"PRIVATE-TOKEN": TOKEN}
+HEADERS = {
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+}
+if TOKEN:
+    HEADERS["Authorization"] = f"Bearer {TOKEN}"
 
 
-def get_paginated(url, params):
+def get_paginated(url, params, key):
+    # GitHub renvoie un objet {"<key>": [...]}, on pagine jusqu'a une page incomplete.
     results = []
     page = 1
     while True:
@@ -21,11 +31,9 @@ def get_paginated(url, params):
         params["per_page"] = 100
         r = requests.get(url, headers=HEADERS, params=params, timeout=30)
         r.raise_for_status()
-        batch = r.json()
-        if not batch:
-            break
+        batch = r.json()[key]
         results.extend(batch)
-        if not r.headers.get("x-next-page"):
+        if len(batch) < 100:
             break
         page += 1
     return results
@@ -36,19 +44,29 @@ def parse_dt(value):
 
 
 def fetch_deploy_jobs(since):
-    pipelines = get_paginated(
-        f"{GITLAB_API}/projects/{PROJECT_ID}/pipelines",
-        {"ref": "main", "updated_after": since.isoformat()},
+    runs = get_paginated(
+        f"{GITHUB_API}/repos/{REPO}/actions/runs",
+        {
+            "branch": "main",
+            "event": "push",
+            "created": f">={since.strftime('%Y-%m-%dT%H:%M:%SZ')}",
+        },
+        "workflow_runs",
     )
     deploy_jobs = []
-    for pipeline in pipelines:
+    for run in runs:
         jobs = get_paginated(
-            f"{GITLAB_API}/projects/{PROJECT_ID}/pipelines/{pipeline['id']}/jobs",
+            f"{GITHUB_API}/repos/{REPO}/actions/runs/{run['id']}/jobs",
             {},
+            "jobs",
         )
         for job in jobs:
-            if job["name"] == "deploy" and job["status"] in ("success", "failed"):
-                job["pipeline_created_at"] = pipeline["created_at"]
+            if job["name"] == DEPLOY_JOB_NAME and job["conclusion"] in ("success", "failure"):
+                # On reutilise les memes champs que dans la version GitLab,
+                # pour ne pas toucher a compute_metrics().
+                job["status"] = "success" if job["conclusion"] == "success" else "failed"
+                job["finished_at"] = job["completed_at"]
+                job["pipeline_created_at"] = run["created_at"]
                 deploy_jobs.append(job)
     return sorted(deploy_jobs, key=lambda j: j["created_at"])
 

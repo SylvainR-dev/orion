@@ -9,3 +9,4 @@ node_modules/
 # Secrets et fichiers locaux
 ansible/registry-credentials.yml
 ansible/kubeconfig-orion.yaml
+.venv/
