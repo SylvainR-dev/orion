@@ -1,5 +1,12 @@
 # Sécurité — MicroCRM (Orion)
 
+## Historique et évolution
+
+**Évolution de la posture de sécurité.** La sécurité a été déplacée vers l'amont à chaque étape. Le scan Trivy, d'abord réalisé tardivement côté exploitation, s'exécute maintenant juste après la construction de chaque image et bloque la publication en cas de faille critique : il a détecté des CVE critiques réelles dans la version de Tomcat embarquée par Spring Boot, corrigées en surchargeant la version. L'utilisateur IAM de Terraform, d'abord doté de droits d'administration pour avancer (dette assumée), a été remplacé par une policy restreinte par service et par ressource. L'architecture actuelle réduit encore la surface d'exposition : l'endpoint public du cluster EKS, sans restriction d'IP, a disparu au profit d'une instance dont seul le port SSH est ouvert, uniquement à mon adresse, avec un accès à l'API k3s par tunnel SSH. La migration vers GitHub Actions a aussi réduit le nombre de secrets à gérer : la CI ne détient plus ni clés AWS ni kubeconfig, puisqu'elle s'arrête à la publication des images (dépôt public, images publiques, donc aucun secret de téléchargement non plus). Il reste notamment le jeton SonarCloud, stocké dans les secrets GitHub Actions.
+
+> Les sections suivantes décrivent encore en partie l'état précédent (EKS, GitLab CI) et sont en cours de mise à jour.
+
+
 Ce document décrit l'approche DevSecOps mise en place sur le projet : contrôles de sécurité intégrés au pipeline (shift-left), gestion des secrets, sécurité applicative (back/front), sécurité des conteneurs, et dette de sécurité assumée au niveau infrastructure. Il complète `back/TESTING.md`, `front/TESTING.md`, `back/PERF-back.md` et `front/PERF.md`.
 
 ## 1. Approche générale — Shift-left

@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.10"
 
   required_providers {
     aws = {
@@ -8,9 +8,10 @@ terraform {
     }
   }
 
+  # Etat Terraform separe de celui de l'instance lcv (cle differente)
   backend "s3" {
     bucket       = "orion-terraform-state-476646938402"
-    key          = "eks/terraform.tfstate"
+    key          = "orion-k3s/terraform.tfstate"
     region       = "eu-west-3"
     use_lockfile = true
   }

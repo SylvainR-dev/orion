@@ -1,5 +1,12 @@
 # Performance — Backend (Spring Boot / EKS)
 
+## Historique et évolution
+
+**Évolution du dimensionnement.** Les premières contraintes de performance venaient du compte AWS en Free Tier : les nœuds EKS étaient des `t3.small` (2 vCPU, 2 Go) partagés entre le backend, le frontend et toute la supervision. Après la migration vers k3s sur une instance unique, la même taille s'est révélée insuffisante : l'API de k3s expirait dès que la supervision était déployée, d'où le passage à `t3.medium` (4 Go). Plus récemment, la mise à jour de Grafana en version 13 a démontré qu'un dimensionnement fixé une fois ne tient pas : ses limites de CPU et de mémoire, calibrées pour l'ancienne version, empêchaient son démarrage, et les augmenter a résolu le problème. Les métriques DORA, qui lisaient l'API GitLab, lisent maintenant l'API GitHub Actions. Comme la CI s'arrête à la publication des images, l'événement de livraison mesuré est cette publication, pas le déploiement final.
+
+> Les sections suivantes décrivent encore en partie l'état précédent (EKS, GitLab CI) et sont en cours de mise à jour.
+
+
 Ce document décrit l'approche performance retenue pour le backend MicroCRM (Orion) : dimensionnement des ressources, monitoring en place, limites connues et pistes d'amélioration. Contrairement au testing, **aucun test de charge automatisé** (JMeter, k6, Gatling…) n'a été mis en place à ce stade du projet — ce document reflète une approche de performance par **dimensionnement et observation**, pas par benchmark.
 
 ## 1. Vue d'ensemble

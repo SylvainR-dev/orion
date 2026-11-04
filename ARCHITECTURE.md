@@ -1,5 +1,12 @@
 # Architecture — MicroCRM (Orion)
 
+## Historique et évolution
+
+**Comment l'architecture a évolué et pourquoi.** L'environnement cible a changé trois fois. D'abord, un serveur de démonstration simulé (conteneur Debian avec SSH et Docker imbriqué) recevait un déploiement Ansible : suffisant pour valider la chaîne CI, mais éloigné d'une vraie production. Ensuite, un cluster EKS (VPC dédié sur 2 zones, NAT Gateway, groupe de nœuds managé) a apporté un environnement réaliste, au prix d'un coût fixe élevé. Enfin, une instance EC2 unique exécutant k3s a remplacé EKS : même API Kubernetes, donc mêmes charts Helm, mais sans plan de contrôle facturé ni NAT Gateway. Côté sécurité réseau, l'API k3s n'est plus exposée : l'accès se fait par tunnel SSH. Côté application, le backend a été refondu d'une exposition directe des repositories vers des couches Controller / Service / Repository, pour pouvoir porter de la logique métier et des tests. Le choix de garder Kubernetes plutôt que de passer à Docker Compose est assumé : il préserve les acquis (Helm, probes, rollback automatique avec `--atomic`) et reste cohérent avec l'objectif du projet.
+
+> Les sections suivantes décrivent encore en partie l'état précédent (EKS, GitLab CI) et sont en cours de mise à jour.
+
+
 Ce document décrit l'architecture globale du projet MicroCRM : architecture applicative (backend/frontend), architecture des conteneurs, architecture de l'infrastructure Cloud (IaC), architecture du pipeline CI/CD et architecture de supervision. Il complète `testing-back.md`, `testing-front.md`, `PERF-back.md`, `PERF-front.md` et `SECURITY.md`.
 
 ## 1. Vue d'ensemble

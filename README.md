@@ -1,5 +1,17 @@
 # Orion — MicroCRM
 
+## Historique et évolution
+
+Ce projet est né comme exercice de certification DevOps et a été volontairement conservé et amélioré ensuite, comme un petit laboratoire d'infrastructure. Il a connu quatre grandes étapes :
+
+1. **Partie 1, pipeline CI.** Une chaîne GitLab CI (versioning sémantique, tests, SonarCloud, scan Trivy, publication des images) déployait par Ansible sur un serveur de démonstration simulé dans un conteneur Docker. Ce choix était contraint : la machine virtuelle prévue n'a pas pu tourner sur mon poste.
+2. **Partie 2, infrastructure cloud.** Le déploiement est passé sur un vrai cluster Amazon EKS provisionné par Terraform, configuré par Ansible, déployé par Helm, avec supervision (Prometheus, Loki, Grafana) et métriques DORA.
+3. **Réduction des coûts.** Le plan de contrôle EKS (environ 73 $/mois) plus la NAT Gateway coûtaient trop pour un usage de home lab. J'ai remplacé le cluster par une seule instance EC2 exécutant k3s, une distribution Kubernetes légère, ce qui permet de conserver les charts Helm et la structure Terraform/Ansible.
+4. **Séparation et GitHub.** L'instance d'Orion est maintenant dédiée à ce projet, séparée du reste de mon infrastructure, et s'allume ou s'éteint à la demande (`make up` / `make down`) pour ne payer que mes sessions de travail. La CI a été migrée de GitLab vers GitHub Actions et s'arrête à la publication des images sur GitHub Container Registry. Le déploiement se fait depuis mon poste avec `make deploy`, ce qui évite d'ouvrir l'infrastructure à Internet.
+
+En parallèle, le backend est passé d'une exposition directe des repositories (Spring Data REST) à une architecture en couches Controller / Service / Repository, avec une couverture de tests de 0 % à 94 %. Chaque fichier de documentation ci-dessous contient une section d'historique propre à son sujet.
+
+
 Projet DevOps réalisé dans le cadre de la formation OpenClassrooms Expert DevOps (Projet 6 — Option B). Application Full-Stack MicroCRM (gestion de personnes et d'organisations) pour l'entreprise fictive **Orion**, avec une chaîne CI/CD complète et une infrastructure Cloud provisionnée par le code.
 
 ## Sommaire

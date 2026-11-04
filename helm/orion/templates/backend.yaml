@@ -15,8 +15,6 @@ spec:
       labels:
         app: orion-backend
     spec:
-      imagePullSecrets:
-        - name: {{ .Values.imagePullSecretName }}
       containers:
         - name: backend
           image: "{{ .Values.imageRegistry }}/{{ .Values.backend.image }}:{{ .Values.backend.tag }}"

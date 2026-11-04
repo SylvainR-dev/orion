@@ -1,0 +1,206 @@
+name: CI
+
+# GitLab: workflow:rules (MR + branche main)
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  SONAR_USER_HOME: ${{ github.workspace }}/.sonar
+  SONAR_HOST_URL: https://sonarcloud.io
+
+jobs:
+  # ---------- stage: version ----------
+  version:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      version: ${{ steps.ver.outputs.VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release
+          test -f version.env || echo "VERSION=" > version.env
+      - id: ver
+        run: cat version.env >> "$GITHUB_OUTPUT"
+
+  # ---------- stage: test ----------
+  test-front:
+    needs: [version]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Tests Karma + couverture
+        working-directory: front
+        run: |
+          npm ci
+          CHROME_BIN=/usr/bin/google-chrome npx @angular/cli test --no-watch --no-progress --browsers=ChromeHeadlessNoSandbox --code-coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-front
+          path: front/coverage/microcrm/lcov.info
+          retention-days: 1
+
+  test-back:
+    needs: [version]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Tests JUnit + Jacoco
+        working-directory: back
+        run: ./gradlew test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-back
+          path: back/build/reports/jacoco/test/jacocoTestReport.xml
+          retention-days: 1
+
+  # ---------- stage: quality ----------
+  sonarqube-back:
+    needs: [test-back]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/cache@v4
+        with:
+          path: .sonar/cache
+          key: sonarqube-back
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-back
+          path: back/build/reports/jacoco/test/
+      - name: Analyse Sonar backend
+        working-directory: back
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./gradlew sonar
+
+  sonarqube-front:
+    needs: [test-front]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/cache@v4
+        with:
+          path: .sonar/cache
+          key: sonarqube-front
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-front
+          path: front/coverage/microcrm/
+      - uses: SonarSource/sonarqube-scan-action@v5
+        with:
+          projectBaseDir: front
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ---------- stage: build ----------
+  build-front:
+    needs: [sonarqube-front, sonarqube-back]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - working-directory: front
+        run: |
+          npm ci
+          npx @angular/cli build --optimization
+
+  build-back:
+    needs: [sonarqube-front, sonarqube-back]
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - working-directory: back
+        run: ./gradlew build
+
+  # ---------- stage: publish ----------
+  # Comme dans GitLab : depend uniquement de "version".
+  publish-images:
+    needs: [version]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.version.outputs.version != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      TRIVY_VERSION: "0.54.1"
+      IMAGE: ghcr.io/sylvainr-dev/orion
+      LABEL: org.opencontainers.image.source=https://github.com/SylvainR-dev/orion
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: front
+        run: |
+          docker build --label "$LABEL" --target front -t "$IMAGE/front:$VERSION" -t "$IMAGE/front:latest" .
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$IMAGE/front:$VERSION"
+          docker push "$IMAGE/front:$VERSION"
+          docker push "$IMAGE/front:latest"
+      - name: back
+        run: |
+          docker build --label "$LABEL" --target back -t "$IMAGE/back:$VERSION" -t "$IMAGE/back:latest" .
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$IMAGE/back:$VERSION"
+          docker push "$IMAGE/back:$VERSION"
+          docker push "$IMAGE/back:latest"
+      - name: standalone
+        run: |
+          docker build --label "$LABEL" --target standalone -t "$IMAGE/standalone:$VERSION" -t "$IMAGE/standalone:latest" .
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$IMAGE/standalone:$VERSION"
+          docker push "$IMAGE/standalone:$VERSION"
+          docker push "$IMAGE/standalone:latest"

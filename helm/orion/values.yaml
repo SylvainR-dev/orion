@@ -3,8 +3,7 @@
 
 namespace: orion
 
-imageRegistry: registry.gitlab.com/sylvainr-dev-group/projet-6-demarche-devops
-imagePullSecretName: gitlab-registry-secret
+imageRegistry: ghcr.io/sylvainr-dev/orion
 
 backend:
   image: back

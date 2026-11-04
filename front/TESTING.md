@@ -1,5 +1,12 @@
 # Stratégie et exécution des tests — Frontend (Angular)
 
+## Historique et évolution
+
+**Évolution de la stratégie de tests du frontend.** Deux défauts initiaux ont été corrigés. Karma lançait un vrai navigateur Chrome (non headless), ce qui peut bloquer en environnement CI sans affichage ; il utilise maintenant une configuration headless dédiée. La couverture affichait 0 % dans SonarCloud parce que le reporter `coverage` n'était pas activé dans Karma, et que Sonar attend le format `lcov`, absent de la configuration. Une fois corrigé, la couverture réelle était modeste (environ 33 % des instructions et 9,5 % des branches), ce qui sert de point de départ honnête pour progresser. Comme côté backend, le rapport de couverture est transmis au job SonarCloud sous forme d'artefact. La chaîne de tests a ensuite été migrée de GitLab CI vers GitHub Actions avec les mêmes jobs.
+
+> Les sections suivantes décrivent encore en partie l'état précédent (EKS, GitLab CI) et sont en cours de mise à jour.
+
+
 Ce document décrit la stratégie de tests automatisés du frontend MicroCRM (Orion), les taux de couverture actuels, ainsi que les commandes permettant de les exécuter localement et dans le pipeline CI/CD.
 
 ## 1. Vue d'ensemble
