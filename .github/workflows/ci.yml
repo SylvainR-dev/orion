@@ -85,6 +85,7 @@ jobs:
   # ---------- stage: quality ----------
   sonarqube-back:
     needs: [test-back]
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -110,6 +111,7 @@ jobs:
 
   sonarqube-front:
     needs: [test-front]
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -132,6 +134,7 @@ jobs:
   # ---------- stage: build ----------
   build-front:
     needs: [sonarqube-front, sonarqube-back]
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -147,6 +150,7 @@ jobs:
 
   build-back:
     needs: [sonarqube-front, sonarqube-back]
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
