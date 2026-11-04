@@ -195,12 +195,12 @@ jobs:
       - name: back
         run: |
           docker build --label "$LABEL" --target back -t "$IMAGE/back:$VERSION" -t "$IMAGE/back:latest" .
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$IMAGE/back:$VERSION"
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/.trivyignore:/.trivyignore:ro" aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL --ignorefile /.trivyignore "$IMAGE/back:$VERSION"
           docker push "$IMAGE/back:$VERSION"
           docker push "$IMAGE/back:latest"
       - name: standalone
         run: |
           docker build --label "$LABEL" --target standalone -t "$IMAGE/standalone:$VERSION" -t "$IMAGE/standalone:latest" .
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL "$IMAGE/standalone:$VERSION"
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/.trivyignore:/.trivyignore:ro" aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL --ignorefile /.trivyignore "$IMAGE/standalone:$VERSION"
           docker push "$IMAGE/standalone:$VERSION"
           docker push "$IMAGE/standalone:latest"

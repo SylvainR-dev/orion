@@ -1,0 +1,6 @@
+# CVE-2026-47884 : spring-webmvc, SSRF/RCE via XsltView.
+# Non exploitable ici : l'application n'utilise aucune XsltView (API REST uniquement,
+# controle par grep dans back/src). Le correctif open source n'existe qu'en
+# Spring Framework 7.0.9 (Spring Boot 4), migration non prevue a ce stade.
+# A reevaluer a l'echeance ci-dessous ou lors de la migration vers Spring Boot 4.
+CVE-2026-47884 exp:2027-02-04
