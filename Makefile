@@ -43,3 +43,17 @@ install:
 > ID=$$($(ID_CMD)); IP=$$($(IP_CMD)); \
 > ansible-playbook -i "$$IP," -u admin --private-key $(KEY) -e ansible_python_interpreter=/usr/bin/python3 ansible/bootstrap-k3s.yml
 > chmod 600 ansible/kubeconfig-orion.yaml
+
+.PHONY: deploy
+
+# Deploie Orion (Helm) sur k3s : derniere version publiee, ou VERSION=x.y.z.
+# Prerequis : instance allumee (make up) et KUBECONFIG exporte.
+deploy:
+> V="$(VERSION)"; \
+> [ -n "$$V" ] || V=$$(git ls-remote --tags --refs --sort=-v:refname origin 'v*' | head -n1 | sed 's#.*refs/tags/v##'); \
+> [ -n "$$V" ] || { echo "Aucune version trouvee"; exit 1; }; \
+> echo "Deploiement d'Orion en version $$V"; \
+> KUBECONFIG=$(CURDIR)/ansible/kubeconfig-orion.yaml helm upgrade --install orion helm/orion \
+>   --namespace orion --create-namespace \
+>   --set backend.tag=$$V --set frontend.tag=$$V \
+>   --atomic --timeout 5m
