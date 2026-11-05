@@ -1,3 +1,18 @@
+# [1.20.0](https://github.com/SylvainR-dev/orion/compare/v1.19.1...v1.20.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **ci:** definit HOME pour la commande SSM de deploiement ([5d90597](https://github.com/SylvainR-dev/orion/commit/5d90597399e32be7a8210a8f8bfcf339543ce766))
+* **ci:** la version est creee apres les tests, Sonar et la securite, avant le build ([db1d1aa](https://github.com/SylvainR-dev/orion/commit/db1d1aae6bd49346d43506a90df97aa64ba08a36))
+
+
+### Features
+
+* **ansible:** installe l'agent SSM, Helm et git pour le CD ([be78f24](https://github.com/SylvainR-dev/orion/commit/be78f24c8b13d7cc633e6971db94811c5bdbb9ff))
+* **ci:** job deploy via AWS SSM avec approbation manuelle (environment production) ([7ad6a89](https://github.com/SylvainR-dev/orion/commit/7ad6a89736161aae8f9e11f108a6694baa96c2c2))
+* **infra:** OIDC GitHub, role de deploiement et profil SSM pour le CD ([9ed215e](https://github.com/SylvainR-dev/orion/commit/9ed215ec7c0ab70d87aab972638a868199be3aa4))
+
 ## [1.19.1](https://github.com/SylvainR-dev/orion/compare/v1.19.0...v1.19.1) (2026-11-04)
 
 
