@@ -163,10 +163,44 @@ jobs:
       - working-directory: back
         run: ./gradlew build
 
+  # ---------- stage: security (DevSecOps) ----------
+  # Detection de secrets dans le code et dans tout l'historique git.
+  gitleaks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Scan de la configuration d'infrastructure (chart Helm + Terraform).
+  # Premiere version NON BLOQUANTE (EXIT_CODE "0") : on lit le rapport, on corrige
+  # ou on justifie chaque constat, puis on passera EXIT_CODE a "1" pour bloquer.
+  trivy-config:
+    runs-on: ubuntu-latest
+    env:
+      TRIVY_VERSION: "0.54.1"
+      EXIT_CODE: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy config (helm, terraform-orion)
+        run: |
+          rc=0
+          for d in helm terraform-orion; do
+            echo "=== $d ==="
+            docker run --rm -v "$PWD:/src:ro" aquasec/trivy:$TRIVY_VERSION config --exit-code $EXIT_CODE --severity HIGH,CRITICAL "/src/$d" || rc=1
+          done
+          exit $rc
+
   # ---------- stage: publish ----------
-  # Comme dans GitLab : depend uniquement de "version".
+  # Depend de "version" et des controles de securite (gitleaks, trivy-config).
   publish-images:
-    needs: [version]
+    needs: [version, gitleaks, trivy-config]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.version.outputs.version != ''
     runs-on: ubuntu-latest
     permissions:
