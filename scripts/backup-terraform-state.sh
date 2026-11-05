@@ -13,7 +13,7 @@
 # pour disposer de points de restauration clairs et faciles à lister.
 #
 # Usage :
-#   ./scripts/backup-terraform-state.sh
+#   ./scripts/backup-terraform-state.sh [cle-du-state]   (defaut : orion-k3s/terraform.tfstate)
 #
 # Prérequis :
 #   - AWS CLI configuré avec des identifiants valides (profil par défaut ou variables
@@ -25,10 +25,11 @@ set -euo pipefail
 
 # --- Configuration ---
 readonly BUCKET="orion-terraform-state-476646938402"
-readonly STATE_KEY="eks/terraform.tfstate"
+readonly STATE_KEY="${1:-orion-k3s/terraform.tfstate}"
+readonly STATE_DIR="$(dirname "${STATE_KEY}")"
 readonly BACKUP_PREFIX="backups"
 readonly TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-readonly BACKUP_KEY="eks/${BACKUP_PREFIX}/terraform-state-${TIMESTAMP}.tfstate"
+readonly BACKUP_KEY="${STATE_DIR}/${BACKUP_PREFIX}/terraform-state-${TIMESTAMP}.tfstate"
 
 echo "== Sauvegarde du state Terraform =="
 echo "Bucket source      : s3://${BUCKET}/${STATE_KEY}"
@@ -54,7 +55,7 @@ echo ""
 echo "Snapshot créé avec succès : s3://${BUCKET}/${BACKUP_KEY}"
 echo ""
 echo "Pour lister les snapshots existants :"
-echo "  aws s3 ls s3://${BUCKET}/eks/${BACKUP_PREFIX}/"
+echo "  aws s3 ls s3://${BUCKET}/${STATE_DIR}/${BACKUP_PREFIX}/"
 echo ""
 echo "Pour restaurer un snapshot (à exécuter avec précaution, écrase le state actif) :"
 echo "  aws s3 cp s3://${BUCKET}/${BACKUP_KEY} s3://${BUCKET}/${STATE_KEY}"
