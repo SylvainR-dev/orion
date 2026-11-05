@@ -238,3 +238,55 @@ jobs:
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD/.trivyignore:/.trivyignore:ro" aquasec/trivy:$TRIVY_VERSION image --exit-code 1 --severity CRITICAL --ignorefile /.trivyignore "$IMAGE/standalone:$VERSION"
           docker push "$IMAGE/standalone:$VERSION"
           docker push "$IMAGE/standalone:latest"
+
+  # ---------- stage: deploy (CD) ----------
+  # Deploie la version publiee sur l'instance k3s via AWS SSM : aucun port ouvert,
+  # authentification OIDC (aucune cle AWS stockee dans GitHub).
+  # Environment "production" : approbation manuelle requise avant l'execution.
+  deploy:
+    needs: [version, publish-images]
+    if: ${{ !failure() && !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.version.outputs.version != '' }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::476646938402:role/orion-github-deploy
+          aws-region: eu-west-3
+      - name: Verifier que l'instance tourne
+        run: |
+          ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=orion-k3s" "Name=instance-state-name,Values=running" --query "Reservations[0].Instances[0].InstanceId" --output text)
+          if [ -z "$ID" ] || [ "$ID" = "None" ]; then
+            echo "Instance orion-k3s eteinte : lance make up, puis relance ce job (Re-run)."
+            exit 1
+          fi
+          echo "INSTANCE_ID=$ID" >> "$GITHUB_ENV"
+      - name: Deployer via SSM
+        run: |
+          cat > params.json << EOF
+          {"commands": [
+            "set -e",
+            "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml",
+            "rm -rf /tmp/orion-deploy",
+            "git clone --depth 1 --branch v$VERSION https://github.com/SylvainR-dev/orion.git /tmp/orion-deploy",
+            "helm upgrade --install orion /tmp/orion-deploy/helm/orion --namespace orion --create-namespace --set backend.tag=$VERSION --set frontend.tag=$VERSION --atomic --timeout 5m",
+            "kubectl -n orion get pods"
+          ]}
+          EOF
+          CMD_ID=$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name AWS-RunShellScript --comment "Deploy Orion $VERSION" --parameters file://params.json --query "Command.CommandId" --output text)
+          echo "Commande SSM : $CMD_ID"
+          STATUS=Pending
+          for i in $(seq 1 60); do
+            sleep 10
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)
+            echo "[$i] $STATUS"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break ;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query StandardOutputContent --output text
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query StandardErrorContent --output text
+          [ "$STATUS" = "Success" ]
