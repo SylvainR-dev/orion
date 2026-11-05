@@ -26,3 +26,9 @@ variable "github_repo" {
   type        = string
   default     = "SylvainR-dev/orion"
 }
+
+variable "github_oidc_sub" {
+  description = "Sub du jeton OIDC GitHub autorise (format avec identifiants numeriques du proprietaire et du depot, insensible aux renommages)"
+  type        = string
+  default     = "repo:SylvainR-dev@268933666/orion@1421817186:environment:production"
+}
