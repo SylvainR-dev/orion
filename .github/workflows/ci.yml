@@ -268,6 +268,7 @@ jobs:
           cat > params.json << EOF
           {"commands": [
             "set -e",
+            "export HOME=/root",
             "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml",
             "rm -rf /tmp/orion-deploy",
             "git clone --depth 1 --branch v$VERSION https://github.com/SylvainR-dev/orion.git /tmp/orion-deploy",
