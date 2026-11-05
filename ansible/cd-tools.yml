@@ -1,0 +1,48 @@
+---
+# Outils necessaires au CD depuis GitHub Actions (via AWS SSM) :
+# agent SSM (pour recevoir les commandes), Helm et git (pour deployer).
+# Usage : make cd-tools
+
+- name: Installer les outils du CD sur l'instance Orion
+  hosts: all
+  become: true
+  vars:
+    aws_region: eu-west-3
+    helm_version: "4.3.1"
+  tasks:
+    - name: Installer git et curl
+      ansible.builtin.apt:
+        name: [git, curl, ca-certificates]
+        state: present
+        update_cache: true
+
+    - name: Agent SSM deja present ?
+      ansible.builtin.stat:
+        path: /usr/bin/amazon-ssm-agent
+      register: ssm_agent
+
+    - name: Telecharger l'agent SSM (paquet Debian officiel AWS)
+      ansible.builtin.get_url:
+        url: "https://s3.{{ aws_region }}.amazonaws.com/amazon-ssm-{{ aws_region }}/latest/debian_amd64/amazon-ssm-agent.deb"
+        dest: /tmp/amazon-ssm-agent.deb
+        mode: "0644"
+      when: not ssm_agent.stat.exists
+
+    - name: Installer l'agent SSM
+      ansible.builtin.apt:
+        deb: /tmp/amazon-ssm-agent.deb
+      when: not ssm_agent.stat.exists
+
+    - name: Activer et demarrer l'agent SSM
+      ansible.builtin.systemd:
+        name: amazon-ssm-agent
+        enabled: true
+        state: started
+
+    - name: Installer Helm (version fixee, identique a celle du poste)
+      ansible.builtin.shell: |
+        set -e
+        curl -fsSL "https://get.helm.sh/helm-v{{ helm_version }}-linux-amd64.tar.gz" | tar -xz -C /tmp
+        install -m 0755 /tmp/linux-amd64/helm /usr/local/bin/helm
+      args:
+        creates: /usr/local/bin/helm

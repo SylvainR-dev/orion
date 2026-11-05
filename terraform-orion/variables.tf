@@ -20,3 +20,9 @@ variable "key_name" {
   type        = string
   default     = "orion-ec2-key"
 }
+
+variable "github_repo" {
+  description = "Depot GitHub autorise a deployer (owner/repo)"
+  type        = string
+  default     = "SylvainR-dev/orion"
+}

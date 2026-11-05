@@ -10,3 +10,4 @@ node_modules/
 ansible/registry-credentials.yml
 ansible/kubeconfig-orion.yaml
 .venv/
+tfplan

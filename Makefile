@@ -66,3 +66,11 @@ deploy:
 dora:
 > KUBECONFIG=$(CURDIR)/ansible/kubeconfig-orion.yaml kubectl -n monitoring port-forward svc/prometheus-pushgateway 9091:9091 > /dev/null & PF=$$!; sleep 3; \
 > PUSHGATEWAY_URL=http://localhost:9091 .venv/bin/python scripts/dora_metrics.py; RC=$$?; kill $$PF; exit $$RC
+
+.PHONY: cd-tools
+
+# Installe sur l'instance les outils du CD (agent SSM, Helm, git). Idempotent.
+cd-tools:
+> ID=$$($(ID_CMD)); IP=$$($(IP_CMD)); \
+> [ "$$IP" != "None" ] || { echo "Instance eteinte : lance make up"; exit 1; }; \
+> ansible-playbook -i "$$IP," -u admin --private-key $(KEY) -e ansible_python_interpreter=/usr/bin/python3 ansible/cd-tools.yml
