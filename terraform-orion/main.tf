@@ -56,6 +56,7 @@ resource "aws_instance" "orion_k3s" {
   subnet_id              = element(data.aws_subnets.default.ids, 0)
   vpc_security_group_ids = [aws_security_group.orion_k3s.id]
   key_name               = var.key_name
+  iam_instance_profile   = aws_iam_instance_profile.orion_k3s.name
 
   root_block_device {
     volume_size = 15 # reste facture meme instance arretee
