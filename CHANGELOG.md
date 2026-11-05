@@ -1,3 +1,10 @@
+## [1.20.1](https://github.com/SylvainR-dev/orion/compare/v1.20.0...v1.20.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* **infra:** le role de deploiement accepte le format actuel du sub OIDC GitHub ([6033a0a](https://github.com/SylvainR-dev/orion/commit/6033a0a0bb57a99801d79183fa3e38784badc03a))
+
 # [1.20.0](https://github.com/SylvainR-dev/orion/compare/v1.19.1...v1.20.0) (2026-11-05)
 
 
