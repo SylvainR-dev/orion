@@ -2,78 +2,110 @@
 
 ## Historique et évolution
 
-**Évolution de la stratégie de sauvegarde.** Au départ, l'état Terraform était local à mon poste, sans historique : un disque perdu ou un second poste de travail aurait signifié repartir d'un état vide et recréer une infrastructure déjà existante. Il a été migré vers un backend S3 distant avec versioning et verrouillage natif, puis complété par un script de snapshot horodaté. Le passage d'EKS à k3s a changé la nature des données à protéger : il n'y a plus de volumes EBS gérés par Kubernetes mais des volumes locaux (`local-path`) sur le disque de l'instance, et la base de l'application est HSQLDB embarquée, donc non persistante. Avant toute opération destructive sur une instance (par exemple retirer k3s), je prends maintenant un snapshot EBS. Les images, auparavant conservées dans le registre GitLab, sont désormais publiées sur GitHub Container Registry, taguées par version sémantique. L'infrastructure d'Orion utilise son propre état Terraform (clé `orion-k3s/terraform.tfstate`), isolé de celui des autres instances.
+Au début du projet, l'état Terraform était un simple fichier sur mon poste, sans historique. C'était fragile : un disque perdu, ou un second poste de travail, et j'aurais dû repartir d'un état vide, avec le risque de recréer une infrastructure qui existait déjà. Quand j'ai voulu lancer Terraform depuis un job de CI, j'ai migré l'état vers un bucket S3 avec versioning et verrouillage natif. Puis j'ai ajouté un script qui crée des copies horodatées, parce que retrouver une version précise dans l'historique de S3 est pénible.
 
-> Les sections suivantes décrivent encore en partie l'état précédent (EKS, GitLab CI) et sont en cours de mise à jour.
+Le passage d'EKS à une instance k3s a changé la nature de ce que j'ai à protéger. Il n'y a plus de volumes EBS gérés par Kubernetes : les données de la supervision sont sur des volumes locaux (`local-path`), donc sur le disque de l'instance. Et la base de l'application est restée une HyperSQL embarquée, qui ne persiste rien.
 
+Un autre changement tient à ma façon de travailler : j'éteins maintenant l'instance après chaque session. Arrêter une instance conserve son disque, donc ce cycle ne perd rien. Ce qui détruit des données, c'est de supprimer l'instance (`terraform destroy`). Avant une opération destructive sur une instance, je prends un snapshot de son disque : je l'ai fait avant de retirer k3s d'une autre instance, et je l'ai supprimé une semaine plus tard, une fois sûr que tout fonctionnait.
 
-Ce document décrit ce qui est sauvegardé sur le projet, comment, et pourquoi certains éléments en sont volontairement exclus. Il complète `ARCHITECTURE.md` (section rollback) et `SECURITY.md`.
+Enfin, le job qui exportait automatiquement mes dashboards Grafana vers le dépôt dépendait de GitLab CI. Je l'ai supprimé avec lui : cette sauvegarde est donc redevenue manuelle (voir la section 3).
 
 ## 1. Vue d'ensemble
 
 | Élément | Sauvegardé ? | Mécanisme |
 |---|---|---|
-| State Terraform | ✅ Oui | Versioning S3 natif + snapshot horodaté explicite (script dédié) |
-| Dashboards Grafana | ✅ Oui | Export automatique CI/CD vers le dépôt Git |
-| Données applicatives (HyperSQL) | ❌ Non, choix assumé | Voir section 4 |
-| Images Docker | ✅ Oui (de fait) | Conservées indéfiniment dans le GitLab Container Registry, taguées par version sémantique |
+| État Terraform | ✅ Oui | Versioning S3 natif, plus un snapshot horodaté avec un script |
+| Dashboard Grafana personnalisé (DORA) | ✅ Oui | Fichier JSON versionné dans le dépôt |
+| Données de supervision (Prometheus, Loki, Grafana) | ❌ Non, choix assumé | Voir la section 4 |
+| Données applicatives (HyperSQL) | ❌ Non, choix assumé | Voir la section 5 |
+| Images Docker | ✅ Oui, de fait | Conservées sur GitHub Container Registry, taguées par version |
+| Code, chaînes de CI et de déploiement | ✅ Oui | Dépôt GitHub, toutes les branches et les tags |
+| Disque de l'instance | ⚠️ Ponctuellement | Snapshot EBS manuel avant une opération risquée, pas de planification |
 
-## 2. Sauvegarde du state Terraform
+## 2. Sauvegarde de l'état Terraform
 
-### 2.1 Mécanisme natif — versioning S3
+### 2.1 Mécanisme natif : le versioning S3
 
-Le bucket `orion-terraform-state-476646938402` (backend distant Terraform) a le **versioning S3 activé** depuis sa création (`aws s3api put-bucket-versioning`). Chaque écriture du state (à chaque `terraform apply`/`destroy`) crée automatiquement une nouvelle version, conservée indéfiniment par S3 — aucune perte possible en cas de corruption ou de mauvaise manipulation, la version précédente reste accessible.
+Le bucket de l'état (`orion-terraform-state-<identifiant-de-compte>`) a le **versioning activé**. Chaque écriture de l'état (à chaque `terraform apply` ou `destroy`) crée une nouvelle version, conservée par S3 : après une corruption ou une mauvaise manipulation, la version précédente reste accessible.
 
-### 2.2 Snapshot explicite complémentaire
+L'état d'Orion est stocké sous la clé `orion-k3s/terraform.tfstate`. Mes autres instances ont leur propre clé dans le même bucket, pour qu'une opération sur Orion ne puisse jamais toucher l'état d'une autre machine.
 
-Le versioning S3 natif fonctionne, mais retrouver une version précise nécessite de parcourir l'historique des versions de l'objet (souvent long, sans repère temporel lisible au premier coup d'œil). Un script dédié crée en complément des points de restauration explicites et datés :
+### 2.2 Copie horodatée explicite
+
+Retrouver une version précise dans l'historique de S3 est long, et les entrées n'ont pas de repère de date lisible. J'ai donc écrit un script qui crée des points de restauration datés :
 
 ```bash
-./scripts/backup-terraform-state.sh
+./scripts/backup-terraform-state.sh                      # état d'Orion (clé par défaut)
+./scripts/backup-terraform-state.sh <clé-du-state>       # un autre état du même bucket
 ```
 
-Ce script copie le state actuel vers `s3://orion-terraform-state-476646938402/eks/backups/terraform-state-<horodatage>.tfstate`, sans téléchargement local (copie côté serveur S3).
+Il copie l'état vers `s3://<bucket>/orion-k3s/backups/terraform-state-<horodatage>.tfstate`, par une copie côté serveur (rien n'est téléchargé en local). Il ne modifie jamais l'original. Sans argument, il sauvegarde l'état d'Orion.
 
-**Lister les snapshots existants :**
+**Lister les copies :**
 ```bash
-aws s3 ls s3://orion-terraform-state-476646938402/eks/backups/
+aws s3 ls s3://<bucket>/orion-k3s/backups/
 ```
 
-**Restaurer un snapshot** (à faire avec précaution — écrase le state actif) :
+**Restaurer une copie** (écrase l'état actif, à faire avec précaution) :
 ```bash
-aws s3 cp s3://orion-terraform-state-476646938402/eks/backups/terraform-state-<horodatage>.tfstate \
-  s3://orion-terraform-state-476646938402/eks/terraform.tfstate
+aws s3 cp s3://<bucket>/orion-k3s/backups/terraform-state-<horodatage>.tfstate \
+  s3://<bucket>/orion-k3s/terraform.tfstate
 ```
 
-Après restauration, toujours vérifier la cohérence avant toute action :
+Après une restauration, je vérifie toujours la cohérence avant d'agir :
 ```bash
-cd terraform
+cd terraform-orion
 terraform plan
 ```
 
 ### 2.3 Quand l'exécuter
 
-Ce script n'est pas (encore) intégré au pipeline CI/CD de façon automatique — à exécuter manuellement avant toute opération Terraform jugée risquée (changement de version majeure, modification structurelle du VPC/EKS). Automatisation en amont d'un `terraform-apply` identifiée comme amélioration future possible.
+Le script n'est pas dans la CI : Terraform tourne depuis mon poste, et c'est là que je l'exécute, **avant toute opération risquée** (changement de version majeure du fournisseur, modification d'une ressource IAM ou de l'instance). Je l'ai fait avant d'ajouter les rôles du déploiement continu.
 
-## 3. Sauvegarde des dashboards Grafana
+## 3. Dashboards Grafana
 
-Mécanisme déjà en place et automatisé : le job CI `export-dashboards` (manuel, sur `main`) exporte l'intégralité des dashboards Grafana actifs vers `helm/monitoring/dashboards/*.json`, committés automatiquement sur le dépôt Git (`chore(monitoring): sauvegarde automatique des dashboards Grafana [skip ci]`).
+Le dépôt contient `helm/monitoring/dashboards/*.json`, mais **un seul de ces fichiers est à moi** : `orion-dora-metrics.json`. Les autres sont d'anciens exports de dashboards que le chart `kube-prometheus-stack` fournit déjà, et je ne les recharge pas pour éviter les doublons.
 
-En cas de perte du cluster (destroy accidentel, corruption), ces fichiers JSON peuvent être réinjectés via des ConfigMaps labellisés (`grafana_dashboard=1`), repris automatiquement par le sidecar Grafana au prochain déploiement de `monitoring-deploy`.
+Mon dashboard est donc sauvegardé par le dépôt. **Si je le modifie dans Grafana, je dois exporter le JSON à la main** (menu *Share → Export*) et le commiter : l'export automatique n'existe plus. Pour le recharger après une perte :
 
-## 4. Exclusion volontaire des données applicatives (HyperSQL)
+```bash
+kubectl create configmap grafana-dashboard-orion-dora-metrics \
+  --from-file=dashboard.json=helm/monitoring/dashboards/orion-dora-metrics.json \
+  -n monitoring --dry-run=client -o yaml \
+  | kubectl label --local -f - grafana_dashboard=1 -o yaml | kubectl apply -f -
+```
 
-**Aucun mécanisme de sauvegarde n'est mis en place pour les données métier de l'application (personnes, organisations).** Ce choix est délibéré, pas un oubli, pour les raisons suivantes :
+Le sidecar de Grafana le reprend en quelques secondes.
 
-- **HyperSQL tourne en mode embarqué mémoire** (contrainte du projet — pas de PostgreSQL en production, voir `PERF-back.md`), sans volume persistant attaché au pod backend. Les données n'existent que dans la RAM du conteneur.
-- **Conséquence directe** : à chaque redéploiement (`helm upgrade`), redémarrage de pod, ou cycle `terraform destroy`/`apply`, les données sont perdues **de toute façon**, qu'un mécanisme de sauvegarde existe ou non — sauvegarder une base qui s'efface systématiquement à chaque cycle n'aurait pas de valeur opérationnelle réelle dans l'état actuel de l'architecture.
-- **Cohérent avec le périmètre du projet** : l'application est un environnement de démonstration/pédagogique (`InitialDataFixture` réinjecte un jeu de données de test à chaque démarrage), pas un service en production avec des données réelles à préserver.
+## 4. Ce que je ne sauvegarde pas : la supervision
 
-### Ce qu'il faudrait pour rendre une sauvegarde pertinente
+Les données de Prometheus et de Loki sont sur le disque de l'instance, avec une rétention de **deux jours**, et je ne les sauvegarde pas. Ce sont des métriques de laboratoire sans valeur à long terme. Les perdre ne coûte qu'un historique court, et le reste de la supervision se redéploie avec Helm depuis le dépôt (voir `README.md`). Les valeurs des métriques DORA, elles, sont recalculées depuis l'API GitHub par `make dora`.
 
-Si le projet évoluait vers une cible de production réelle, la sauvegarde de données applicatives nécessiterait au préalable :
-1. Migration vers une base persistante (PostgreSQL/RDS, déjà identifiée comme dette technique dans `SECURITY.md` et `PERF.md`).
-2. Ou, a minima, bascule de HyperSQL du mode mémoire vers le mode fichier (`jdbc:hsqldb:file:...`) avec un volume persistant (StorageClass EBS déjà disponible sur le cluster, réutilisable).
-3. Un job de sauvegarde du fichier/dump vers S3, sur le même modèle que le script `backup-terraform-state.sh`.
+## 5. Ce que je ne sauvegarde pas : les données applicatives
 
-Ce point est documenté comme axe d'amélioration future plutôt que traité dans le cadre actuel du projet.
+**Aucune sauvegarde n'existe pour les données métier (personnes, organisations).** C'est un choix délibéré :
+
+- **HyperSQL est embarquée dans le conteneur du backend**, sans volume persistant. Les données disparaissent à chaque redémarrage du pod ou redéploiement, que je les sauvegarde ou non.
+- **L'application est un environnement de démonstration** : `InitialDataFixture` réinjecte un jeu de données de test à chaque démarrage. Il n'y a pas de données réelles à protéger.
+
+### Ce qu'il faudrait pour une cible de production
+
+1. Une base persistante (PostgreSQL ou RDS), déjà notée dans la dette de `SECURITY.md`.
+2. Ou au minimum HyperSQL en mode fichier, avec un volume persistant (la StorageClass `local-path` de k3s suffirait).
+3. Un job de sauvegarde vers S3, sur le modèle du script de l'état Terraform.
+
+## 6. Reconstruire après une perte de l'instance
+
+Si je supprime l'instance (par erreur ou volontairement avec `terraform destroy`), son disque disparaît avec elle : k3s, les volumes de la supervision, et tout ce qui était déployé. Tout se reconstruit à partir du dépôt et de l'état Terraform, avec la procédure du `README.md` :
+
+1. `terraform apply` dans `terraform-orion/` (instance, groupe de sécurité, rôles IAM).
+2. `make install` puis `make cd-tools` (k3s, agent SSM, Helm, git).
+3. Déploiement de la supervision avec Helm, puis rechargement de mon dashboard.
+4. Une release sur `main`, ou `make deploy`, pour redéployer l'application. Les images sont déjà sur GHCR.
+
+## 7. Limites et pistes d'amélioration
+
+- Pas de snapshot EBS planifié du disque de l'instance. Je le fais à la main avant une opération risquée, et j'oublie de le planifier.
+- Pas de sauvegarde automatique du dashboard DORA : je dois exporter le JSON après toute modification.
+- Aucune règle de nettoyage des anciennes versions d'images sur GHCR.
+- Le script de sauvegarde de l'état n'est lancé qu'à la main.
