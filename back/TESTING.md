@@ -2,40 +2,41 @@
 
 ## Historique et évolution
 
-**Évolution de la stratégie de tests du backend.** À l'origine, le backend ne comptait qu'un test de démarrage et un test de repository, et SonarCloud affichait 0 % de couverture : le plugin JaCoCo n'était pas configuré, et le rapport généré dans un job n'était pas transmis au job d'analyse (chaque job a son propre espace de travail). Les deux problèmes ont été corrigés (plugin JaCoCo, passage du rapport en artefact). La refonte en architecture Controller / Service / Repository a ensuite permis de tester chaque couche séparément (tests de repository, tests de service avec Mockito, tests de contrôleur), pour atteindre 94 % de couverture des instructions et 50 % des branches. Cette refonte a aussi fait apparaître un vrai bug grâce à un test d'intégration : une cascade JPA supprimait des personnes en supprimant leur organisation. La chaîne de tests a ensuite été migrée de GitLab CI vers GitHub Actions en conservant les mêmes jobs et dépendances.
+Quand j'ai pris le backend, il n'avait que deux tests : un test de démarrage du contexte Spring et un test de repository. SonarCloud affichait **0 % de couverture**, côté backend comme côté frontend. Je pensais d'abord que les tests « bloquaient » : en réalité, `./gradlew test` passait sans problème (le projet est en Gradle, pas en Maven, et j'avais lancé la mauvaise commande). Le vrai problème était double. D'une part, aucun plugin JaCoCo n'était configuré, donc aucun rapport de couverture n'était généré. D'autre part, une fois le rapport généré, il restait dans l'espace de travail du job de test et n'arrivait jamais au job Sonar, puisque chaque job de CI travaille dans un espace isolé. J'ai ajouté JaCoCo et fait passer le rapport d'un job à l'autre sous forme d'artefact.
 
-> Les sections suivantes décrivent encore en partie l'état précédent (EKS, GitLab CI) et sont en cours de mise à jour.
+La vraie progression est venue de la refonte en couches Controller / Service / Repository : elle m'a permis de tester chaque couche avec l'outil qui lui convient, au lieu d'un seul type de test générique. J'ai écrit les tests au fur et à mesure, et l'un d'eux a fait apparaître un vrai bug de données : la cascade `CascadeType.ALL` supprimait les personnes avec leur organisation. J'ai corrigé la cascade en `{PERSIST, MERGE}`. La couverture est passée de 0 % à 94 % des instructions.
 
-
-Ce document décrit la stratégie de tests automatisés du backend MicroCRM (Orion), les taux de couverture actuels, ainsi que les commandes permettant de les exécuter localement et dans le pipeline CI/CD.
+La chaîne de tests a ensuite été migrée de GitLab CI vers GitHub Actions avec les mêmes jobs, puis réordonnée : les tests sont maintenant le premier maillon du pipeline, et la création de la version ne se fait qu'une fois qu'ils ont réussi.
 
 ## 1. Vue d'ensemble
 
-| Outils | Type de tests | Couverture actuelle |
+| Outils | Types de tests | Couverture mesurée |
 |---|---|---|
-| JUnit 5, Mockito, `@DataJpaTest`, `@WebMvcTest`, JaCoCo | Repository, Service, Controller | **94 % instructions / 50 % branches** |
+| JUnit 5, Mockito, `@DataJpaTest`, `@WebMvcTest`, JaCoCo | Repository, service, contrôleur | **94 % des instructions, 50 % des branches** |
 
-Le rapport de couverture (JaCoCo, format XML) est généré à chaque exécution des tests et remonté automatiquement à SonarCloud via le pipeline CI/CD — aucune saisie manuelle de taux de couverture n'est nécessaire.
+La suite compte **44 tests**. Le rapport de couverture (JaCoCo, format XML) est généré à chaque exécution et envoyé à SonarCloud par la CI. Les taux ci-dessous ont été mesurés lors de la refonte du backend ; pour les vérifier aujourd'hui, relancer `./gradlew clean test jacocoTestReport`.
 
 ## 2. Architecture testée
-
-Le backend suit une architecture en couches (`Controller → Service → Repository`), ce qui permet de tester chaque couche indépendamment :
 
 | Couche | Type de test | Annotation | Ce qui est vérifié |
 |---|---|---|---|
 | Repository | Intégration | `@DataJpaTest` | Requêtes JPA, contraintes, relations bidirectionnelles |
 | Service | Unitaire | Mockito (`@ExtendWith(MockitoExtension.class)`) | Logique métier, exceptions, cas limites |
-| Controller | Intégration légère | `@WebMvcTest` | Codes HTTP, validation des DTOs, sérialisation JSON |
+| Contrôleur | Intégration légère | `@WebMvcTest` | Codes HTTP, validation des DTO, sérialisation JSON |
 
-Classes de test actuelles :
+Classes de test :
 
-- `PersonRepositoryIntegrationTest`, `OrganizationRepositoryIntegrationTest`
-- `PersonServiceTest` (9 cas : CRUD, doublon d'email, entité introuvable)
-- `OrganizationServiceTest` (11 cas, y compris gestion des membres)
-- `PersonControllerTest`, `OrganizationControllerTest`
-- `MicroCRMApplicationTests` (smoke test de contexte)
+| Classe | Tests | Contenu |
+|---|---|---|
+| `PersonRepositoryIntegrationTest` | 2 | Recherche par e-mail, cas négatif |
+| `OrganizationRepositoryIntegrationTest` | 3 | Relation `@ManyToMany` bidirectionnelle, suppression sans effet sur les personnes |
+| `PersonServiceTest` | 9 | CRUD, doublon d'e-mail, entité introuvable |
+| `OrganizationServiceTest` | 11 | CRUD, gestion des membres, introuvable |
+| `PersonControllerTest` | 9 | Codes HTTP, validation (e-mail invalide, prénom vide), doublon |
+| `OrganizationControllerTest` | 9 | Codes HTTP, validation, association et dissociation |
+| `MicroCRMApplicationTests` | 1 | Démarrage du contexte Spring |
 
-Un test d'intégration dédié (`whenOrganizationDeleted_thenPersonStillExists`) couvre spécifiquement la relation `@ManyToMany` bidirectionnelle et a permis de détecter le bug de `CascadeType.ALL` corrigé en `PERSIST + MERGE`.
+Le test `whenOrganizationDeleted_thenPersonStillExists` couvre la relation `@ManyToMany` et a permis de détecter le bug de `CascadeType.ALL`.
 
 ## 3. Exécuter les tests en local
 
@@ -44,22 +45,21 @@ cd back
 ./gradlew test
 ```
 
-- Résultat attendu : `BUILD SUCCESSFUL`, rapport HTML généré dans `back/build/reports/tests/test/index.html`.
-- Le plugin `jacoco` est déclenché automatiquement après les tests (`finalizedBy jacocoTestReport`, configuré dans `build.gradle`) — aucune commande séparée n'est nécessaire pour générer la couverture.
+Résultat attendu : `BUILD SUCCESSFUL` et `SUCCESS: Executed 44 tests`. Rapport HTML des tests : `back/build/reports/tests/test/index.html`. JaCoCo s'exécute automatiquement après les tests (`finalizedBy jacocoTestReport`), donc aucune commande séparée n'est nécessaire.
 
 ## 4. Consulter la couverture
 
 ```bash
-open back/build/reports/jacoco/test/html/index.html   # rapport HTML lisible
+xdg-open back/build/reports/jacoco/test/html/index.html
 ```
 
-Le rapport XML consommé par SonarCloud est généré au même endroit :
+Le rapport XML que lit SonarCloud :
 
 ```
 back/build/reports/jacoco/test/jacocoTestReport.xml
 ```
 
-Configuration `build.gradle` :
+Configuration de `build.gradle` :
 
 ```groovy
 jacoco {
@@ -80,60 +80,76 @@ jacocoTestReport {
 }
 ```
 
-Le plugin `org.sonarqube` (déjà présent dans `build.gradle`) détecte automatiquement le rapport XML JaCoCo par convention — pas besoin de déclarer `sonar.coverage.jacoco.xmlReportPaths` manuellement.
+Le plugin `org.sonarqube` détecte le rapport XML par convention : il n'est pas nécessaire de déclarer `sonar.coverage.jacoco.xmlReportPaths`.
 
-## 5. Taux de couverture actuels
+## 5. Taux de couverture
 
-Résultat obtenu via `./gradlew clean test jacocoTestReport`, rapport HTML (`back/build/reports/jacoco/test/html/index.html`) :
+Mesuré lors de la refonte, avec `./gradlew clean test jacocoTestReport` :
 
 ![Résumé de couverture JaCoCo par package](assets/testing-back-coverage.png)
 
-| Package | Couverture instructions | Couverture branches | Classes |
+| Package | Instructions | Branches | Classes |
 |---|---|---|---|
 | `person` | 92 % | 50 % | 7 |
 | `organization` | 97 % | n/a | 6 |
 | `microcrm` (racine) | 89 % | 50 % | 2 |
 | `common` | 100 % | n/a | 2 |
-| **Total** | **94 % (676/715 instructions)** | **50 % (3/6 branches)** | **17** |
+| **Total** | **94 % (676/715)** | **50 % (3/6)** | **17** |
 
-Quality Gate SonarCloud : ✅ Passée (0 hotspot de sécurité).
+**Zones non couvertes, que j'ai identifiées et acceptées :**
 
-**Zones non couvertes, identifiées et acceptées :**
-- Le hook `@PreRemove` en conditions réelles Hibernate (difficile à isoler hors contexte transactionnel complet) — explique en grande partie l'écart sur le package `person`.
-- `InitialDataFixture` (jeu de données de démarrage, sans logique métier à tester) — explique l'écart sur le package racine `microcrm`.
-- Les branches non couvertes (3 sur 6 au total) correspondent à des chemins d'erreur secondaires, à examiner si l'objectif est de viser 100 % de couverture de branches.
+- Le hook `@PreRemove` dans un vrai contexte Hibernate, difficile à isoler : c'est l'essentiel de l'écart du package `person`.
+- `InitialDataFixture`, qui insère un jeu de données de démarrage et ne contient aucune logique métier : c'est l'écart du package racine.
+- Les 3 branches non couvertes (sur 6) sont des chemins d'erreur secondaires.
 
-**Dette qualité déjà résolue** : le code smell SonarQube précédemment signalé (lambda à remplacer par une référence de méthode `Person::getId` dans `OrganizationResponse`) a été corrigé.
+SonarCloud : Quality Gate passée, avec 0 point de sécurité à examiner (*hotspot*). Un *code smell* signalé plus tôt (une lambda à remplacer par `Person::getId`) a été corrigé.
 
-## 6. Intégration dans le pipeline CI/CD
+## 6. Intégration dans le pipeline
 
-Le job `test-back` transmet son rapport JaCoCo en artefact au job `sonarqube-back`, les deux jobs travaillant dans des espaces isolés :
+Le job `test-back` envoie son rapport JaCoCo en artefact au job `sonarqube-back`, car les deux travaillent dans des espaces séparés :
 
 ```yaml
 test-back:
-  stage: test
-  script:
-    - cd back && ./gradlew test
-  artifacts:
-    paths:
-      - back/build/reports/jacoco/test/jacocoTestReport.xml
-    expire_in: 1 hour
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+    - name: Tests JUnit + Jacoco
+      working-directory: back
+      run: ./gradlew test
+    - uses: actions/upload-artifact@v4
+      with:
+        name: coverage-back
+        path: back/build/reports/jacoco/test/jacocoTestReport.xml
+        retention-days: 1
 
 sonarqube-back:
-  stage: quality
-  needs:
-    - job: test-back
-      artifacts: true
-  script:
-    - cd back && ./gradlew sonar
+  needs: [test-back]
+  steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: coverage-back
+        path: back/build/reports/jacoco/test/
+    - name: Analyse Sonar backend
+      working-directory: back
+      run: ./gradlew sonar
 ```
 
-**Règles de déclenchement :** `test-back` dispose de règles explicites (`merge_request_event` **ou** push sur branche), condition nécessaire pour que le `needs:` de `sonarqube-back` reste valide en contexte de pipeline de merge request — sans règle explicite, GitLab exclut ce job par défaut des pipelines `merge_request_event`.
+Ces jobs s'exécutent sur chaque Pull Request et chaque push vers `main`. La création de la version (`version`) n'a lieu qu'après leur succès : une version qui échoue aux tests n'est jamais créée.
 
-**Politique de fusion :** aucune fusion vers `main` n'est possible tant que les tests ou la Quality Gate SonarQube échouent (Quality Gate bloquante).
+**Politique de fusion.** Je n'ai pas activé de protection de branche sur `main`, car semantic-release doit pouvoir y pousser son commit de release. Ne fusionner une Pull Request que si les contrôles sont verts reste donc une règle que je m'impose, pas un blocage technique.
 
-## 7. Bonnes pratiques appliquées
+## 7. Limites
 
-- Un test de non-régression a été écrit **avant** la correction d'un bug découvert en cours de refonte (`CascadeType.ALL` → `PERSIST + MERGE`), illustrant la valeur d'une couverture de tests dès la conception plutôt qu'en fin de développement.
-- Chaque couche est testée avec l'outil le plus adapté à son niveau d'isolation (`@DataJpaTest` pour la persistance, Mockito pour la logique pure, `@WebMvcTest` pour le contrat HTTP), plutôt qu'un seul type de test générique.
-- Le rapport de couverture est généré automatiquement à chaque run (`finalizedBy jacocoTestReport`) : aucune étape manuelle n'est nécessaire pour maintenir les chiffres à jour.
+- Les tests sont rejoués deux fois de plus dans le pipeline : `./gradlew build` s'exécute dans `build-back`, puis une troisième fois pendant la construction de l'image Docker. La journalisation de `publish-images` montre bien 44 tests exécutés à cette étape. C'est une perte de temps que je pourrais supprimer en passant `-x test` à ces deux builds.
+- Aucun test de bout en bout, aucun test de charge (voir [`PERF-back.md`](./PERF-back.md)).
+- Le plan de test ne couvre pas les routes `PUT`, d'après la liste des tests de contrôleur ci-dessus.
+
+## 8. Bonnes pratiques appliquées
+
+- J'ai écrit le test qui reproduit un bug avant de le corriger (`CascadeType.ALL` → `{PERSIST, MERGE}`) : c'est ce qui m'a convaincu de tester dès la conception plutôt qu'en fin de développement.
+- Chaque couche est testée avec l'outil adapté à son niveau d'isolation.
+- La couverture est générée automatiquement à chaque exécution, donc les chiffres ne dépendent d'aucune étape manuelle.

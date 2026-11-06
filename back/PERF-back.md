@@ -1,93 +1,106 @@
-# Performance — Backend (Spring Boot / EKS)
+# Performance — Backend (Spring Boot / k3s)
 
 ## Historique et évolution
 
-**Évolution du dimensionnement.** Les premières contraintes de performance venaient du compte AWS en Free Tier : les nœuds EKS étaient des `t3.small` (2 vCPU, 2 Go) partagés entre le backend, le frontend et toute la supervision. Après la migration vers k3s sur une instance unique, la même taille s'est révélée insuffisante : l'API de k3s expirait dès que la supervision était déployée, d'où le passage à `t3.medium` (4 Go). Plus récemment, la mise à jour de Grafana en version 13 a démontré qu'un dimensionnement fixé une fois ne tient pas : ses limites de CPU et de mémoire, calibrées pour l'ancienne version, empêchaient son démarrage, et les augmenter a résolu le problème. Les métriques DORA, qui lisaient l'API GitLab, lisent maintenant l'API GitHub Actions. Comme la CI s'arrête à la publication des images, l'événement de livraison mesuré est cette publication, pas le déploiement final.
+Je n'ai jamais mené de campagne de mesure sur ce backend : mon approche de la performance a toujours été de **dimensionner, puis observer**. Au départ, le backend tournait sur des nœuds EKS `t3.small` (2 vCPU, 2 Go), les seuls acceptés par mon compte AWS, et ces nœuds devaient aussi héberger le frontend et toute la supervision. J'ai donc fixé les ressources du pod de façon empirique : le conteneur démarrait de façon stable avec 512 Mio de mémoire demandée et 768 Mio en limite, sans tuning de la JVM.
 
-> Les sections suivantes décrivent encore en partie l'état précédent (EKS, GitLab CI) et sont en cours de mise à jour.
+Quand j'ai remplacé EKS par une instance EC2 avec k3s pour réduire les coûts, la même taille s'est révélée insuffisante. Avec la supervision déployée, l'API de k3s expirait ; je suis passé à une `t3.medium` (4 Go). La mise à jour de Grafana en version 13 m'a ensuite rappelé qu'un dimensionnement choisi une fois ne reste pas valable : les limites que j'avais fixées pour l'ancienne version l'empêchaient de démarrer, et c'est en les relevant que j'ai résolu le problème.
 
-
-Ce document décrit l'approche performance retenue pour le backend MicroCRM (Orion) : dimensionnement des ressources, monitoring en place, limites connues et pistes d'amélioration. Contrairement au testing, **aucun test de charge automatisé** (JMeter, k6, Gatling…) n'a été mis en place à ce stade du projet — ce document reflète une approche de performance par **dimensionnement et observation**, pas par benchmark.
+Le retour arrière a lui aussi changé : en Partie 1, je l'avais scripté avec Ansible (un contrôle de santé qui réessayait plusieurs fois, parce que Spring Boot met plusieurs secondes à démarrer). Aujourd'hui, c'est Helm (`--atomic`) qui s'en charge, avec les probes Kubernetes. Enfin, mes métriques DORA lisaient l'API GitLab ; elles lisent maintenant celle de GitHub Actions.
 
 ## 1. Vue d'ensemble
 
 | Aspect | État actuel |
 |---|---|
-| Test de charge / stress | ❌ Non implémenté |
-| Dimensionnement ressources K8s | ✅ Défini (requests/limits) |
-| Métriques applicatives (JVM, HTTP) | ❌ Non exposées (absence de Spring Boot Actuator) |
-| Métriques infrastructure (CPU/RAM cluster) | ✅ Collectées (Prometheus / kube-prometheus-stack) |
-| Indicateurs de performance du pipeline | ✅ Métriques DORA automatisées |
+| Test de charge ou de stress | ❌ Non implémenté |
+| Dimensionnement Kubernetes | ✅ Défini (demandes et limites) |
+| Métriques applicatives (JVM, HTTP) | ❌ Non exposées (pas de Spring Boot Actuator) |
+| Métriques d'infrastructure (CPU, mémoire) | ✅ Collectées par Prometheus (kube-prometheus-stack) |
+| Indicateurs de livraison | ✅ Métriques DORA |
 
 ## 2. Contrainte de plateforme
 
-Le cluster EKS repose exclusivement sur des nœuds **t3.small** (2 vCPU / 2 Go RAM), imposés par le compte AWS en Free Tier. Toute décision de dimensionnement applicatif doit composer avec cette contrainte matérielle, partagée entre le backend, le frontend et l'ensemble de la stack de supervision (Prometheus, Loki, Grafana, Pushgateway).
+Le backend, le frontend et toute la supervision (Prometheus, Loki, Grafana, Pushgateway) partagent **une seule instance `t3.medium`** (2 vCPU, 4 Go) qui exécute aussi k3s. Toute décision de dimensionnement doit composer avec cette contrainte.
 
-## 3. Dimensionnement des ressources (Kubernetes)
+Historique du choix de la taille : à l'époque d'EKS, le compte était limité aux types éligibles au Free Tier et refusait la `t3.medium`. Sur EC2, la `t3.medium` est passée, et la `t3.small` s'est révélée trop juste avec la supervision.
+
+## 3. Dimensionnement (Kubernetes)
+
+Valeurs du chart `helm/orion/values.yaml` pour le backend :
 
 ```yaml
 resources:
   requests:
-    memory: "512Mi"
+    cpu: 250m
+    memory: 512Mi
   limits:
-    memory: "768Mi"
+    cpu: 500m
+    memory: 768Mi
 ```
 
-Ce dimensionnement a été fixé empiriquement (démarrage stable observé du conteneur Spring Boot par défaut, sans tuning JVM particulier) plutôt que par une campagne de mesure de charge. Aucune limite CPU explicite n'a été fixée — point à documenter comme axe d'amélioration (risque de contention CPU non maîtrisée sous charge concurrente sur un nœud t3.small).
+Ces valeurs ont été fixées par observation du démarrage, pas par une mesure de charge. À titre d'ordre de grandeur, j'ai observé environ 200 Mo de mémoire résidente pour le processus Java sur une instance précédente (avant la montée de Tomcat en 10.1.59), sans avoir refait la mesure depuis.
 
-**JVM :** aucun réglage explicite du heap (`-Xmx`/`-Xms`) n'a été appliqué ; l'application tourne avec les valeurs par défaut de la JVM embarquée dans l'image, calculées automatiquement en fonction des limites de conteneur (JDK container-aware depuis Java 10+). Non validé par un test de montée en charge.
+**JVM** : je n'ai fixé aucun réglage du tas (`-Xmx`, `-Xms`). L'application s'exécute avec un JRE 21 sur Alpine, dont les valeurs par défaut tiennent compte des limites du conteneur. Par défaut, la JVM limite son tas à environ 25 % de la mémoire du conteneur, soit une centaine de mégaoctets avec une limite de 768 Mio. C'est une valeur par défaut de la JVM, que je n'ai pas validée par un test de montée en charge.
 
 ## 4. Démarrage et disponibilité
 
-Spring Boot met plusieurs secondes à démarrer complètement (chargement du contexte, initialisation JPA/HyperSQL). Cette latence de démarrage est prise en compte dans le mécanisme de rollback Ansible :
+Spring Boot met plusieurs secondes à démarrer (contexte Spring, JPA, HyperSQL). Cette latence est prise en compte par les probes du chart :
 
-- health check HTTP avec **10 tentatives**, **3 secondes d'intervalle** entre chaque tentative ;
-- un test immédiat et unique aurait produit de faux échecs de déploiement.
+- **readiness** : test de connexion TCP sur le port 8080, après 20 secondes, toutes les 10 secondes ;
+- **liveness** : même test, après 30 secondes, toutes les 15 secondes.
 
-Ce paramétrage constitue la seule mesure de performance de démarrage formalisée à ce jour — aucune mesure précise du temps de démarrage moyen n'a été effectuée.
+Un test immédiat produirait de faux échecs. Avec `helm upgrade --atomic`, si les pods de la nouvelle version ne deviennent pas prêts en 5 minutes, Helm restaure la révision précédente.
+
+Je n'ai jamais mesuré le temps de démarrage. Pour l'obtenir :
+
+```bash
+kubectl -n orion logs deploy/orion-backend | grep "Started MicroCRMApplication"
+```
+
+Spring affiche cette ligne avec la durée de démarrage.
 
 ## 5. Base de données
 
-HyperSQL est utilisée en mode embarqué (contrainte du projet — pas de PostgreSQL en production). Conséquences en matière de performance :
+HyperSQL est embarquée en mode mémoire (contrainte du projet). Conséquences :
 
-- Les accès base sont in-process, donc très rapides à l'échelle du volume de données du projet (démonstration, pas de charge réelle) ;
-- **Aucun test de montée en charge** n'a été réalisé pour évaluer un comportement sous concurrence ou sur un volume de données réaliste ;
-- Ce choix n'est pas représentatif d'un environnement de production et ne doit pas être extrapolé pour dimensionner une base PostgreSQL/RDS réelle.
+- les accès sont dans le processus, donc très rapides pour le volume de données du projet ;
+- **aucun test de concurrence** ni de volume réaliste n'a été fait ;
+- il ne faut pas extrapoler ces résultats pour dimensionner une vraie base PostgreSQL.
 
-## 6. Optimisations déjà en place
+## 6. Optimisations en place
 
-- **Image Docker multi-stage** : séparation des stages `back-build` et `back`, l'image finale ne contient que l'artefact compilé et le JRE, sans les outils de build (Gradle, cache de dépendances) — réduit la taille de l'image et le temps de pull.
-- **Version de Tomcat surchargée** (`ext['tomcat.version']` → `10.1.55`) pour corriger des CVE critiques détectées par Trivy — un correctif de sécurité, mais qui a aussi permis de bénéficier des correctifs de performance inclus dans les versions plus récentes de Tomcat.
-- **Scan Trivy positionné en amont du pipeline** (juste après le build, avant publication) — évite de déployer une image dont les vulnérabilités pourraient impacter la stabilité et donc la performance perçue du service.
+- **Image multi-stage** : les stages `back-build` et `back` sont séparés. L'image finale ne contient que le jar et le JRE, sans Gradle ni cache de dépendances, ce qui réduit sa taille et le temps de téléchargement.
+- **Scan Trivy avant publication** : une image avec une faille critique n'est jamais publiée.
+- **Version de Tomcat fixée** (`10.1.59`) pour corriger des failles critiques : c'est un correctif de sécurité, je n'ai pas mesuré d'effet sur les performances.
 
-## 7. Monitoring et observabilité — limite majeure connue
+## 7. Supervision : la limite majeure
 
-**Aucune métrique applicative n'est actuellement exposée par le backend.** L'absence de dépendance `spring-boot-starter-actuator` dans `build.gradle` signifie que :
+**Le backend n'expose aucune métrique applicative.** Sans `spring-boot-starter-actuator` :
 
-- il n'existe pas d'endpoint `/actuator/prometheus` ou `/actuator/metrics` ;
-- les probes Kubernetes sont en `tcpSocket` (simple test d'ouverture du port), et non en `httpGet` sur un endpoint de santé applicatif ;
-- Prometheus ne collecte **que des métriques d'infrastructure** (CPU/RAM des pods et nœuds, via `kube-state-metrics` et `node-exporter`), pas de métriques applicatives (temps de réponse HTTP, taux d'erreur, latence JPA, pool de connexions, etc.).
+- il n'y a pas d'endpoint `/actuator/prometheus` ni `/actuator/metrics` ;
+- les probes ne vérifient que l'ouverture du port (`tcpSocket`), pas un endpoint de santé ;
+- Prometheus ne collecte que des métriques d'infrastructure (CPU et mémoire des pods et du nœud), pas de temps de réponse, de taux d'erreur ni de pool de connexions.
 
-Cette limite est documentée comme dette technique du projet et constitue le principal axe d'amélioration en matière de performance.
+C'est la principale amélioration à apporter.
 
-## 8. Indicateur de performance disponible : métriques DORA
+## 8. Indicateurs disponibles : métriques DORA
 
-En l'absence de métriques applicatives fines, le seul indicateur de performance actuellement mesuré et automatisé porte sur le **processus de livraison**, pas sur le runtime applicatif :
+Seul le **processus de livraison** est mesuré, pas le runtime applicatif :
 
-- Fréquence de déploiement
-- Délai moyen de mise en production (lead time for changes)
-- Taux d'échec des changements (change failure rate)
-- Délai de rétablissement du service (time to restore service)
+- fréquence de livraison ;
+- délai de livraison (*lead time for changes*) ;
+- taux d'échec des changements ;
+- délai de rétablissement.
 
-Ces indicateurs sont calculés via `scripts/dora_metrics.py` (API GitLab), poussés vers Prometheus Pushgateway, et visualisés dans le dashboard Grafana « Orion - DORA Metrics ». Voir `testing-back.md` et la documentation CI/CD pour le détail du mécanisme.
+`scripts/dora_metrics.py` les calcule depuis l'API GitHub Actions et les envoie au Pushgateway, d'où Prometheus les collecte pour le dashboard Grafana « Orion - DORA Metrics ». Deux limites : l'événement mesuré est la **publication des images** (`publish-images`), puisque le déploiement dépend d'une approbation manuelle ; et l'API ne renvoie que la dernière tentative de chaque exécution, donc un échec suivi d'un *Re-run* n'apparaît pas. Pour le détail du mécanisme, voir [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
 
-## 9. Recommandations / axes d'amélioration
+## 9. Pistes d'amélioration
 
-| Recommandation | Bénéfice attendu |
+| Piste | Bénéfice attendu |
 |---|---|
-| Ajouter `spring-boot-starter-actuator` + Micrometer + registre Prometheus | Exposer des métriques applicatives réelles (latence HTTP, taux d'erreur, JVM) |
-| Basculer les probes `tcpSocket` vers `httpGet` sur `/actuator/health` | Détection plus fine des pannes applicatives (vs simple ouverture de port) |
-| Fixer une limite CPU explicite dans les manifests K8s | Éviter la contention CPU non maîtrisée sur nœud partagé t3.small |
-| Mettre en place un test de charge (k6 ou JMeter) dans le pipeline CI | Valider le dimensionnement des ressources sous charge réaliste |
-| Ajouter un Horizontal Pod Autoscaler (HPA) basé sur métriques CPU/mémoire | Absorber les pics de charge sans intervention manuelle |
-| Tuning explicite du heap JVM (`-Xmx`) adapté aux limites de conteneur | Réduire le risque d'OOMKill sous charge |
+| Ajouter `spring-boot-starter-actuator` avec Micrometer et le registre Prometheus | Exposer des métriques applicatives (latence, erreurs, JVM) |
+| Passer les probes de `tcpSocket` à `httpGet` sur `/actuator/health` | Détecter les pannes applicatives, pas seulement un port fermé |
+| Faire un test de charge (k6 ou JMeter) pour valider les valeurs CPU et mémoire | Remplacer un dimensionnement empirique par une mesure |
+| Régler explicitement le tas de la JVM (par exemple `-XX:MaxRAMPercentage`) | Contrôler la mémoire réellement utilisée sous charge |
+| Supprimer les exécutions de tests redondantes (`-x test` dans `build-back` et le `Dockerfile`) | Réduire la durée du pipeline |
+| Ajouter un autoscaler horizontal (HPA) | Absorber les pics de charge, utile seulement avec plusieurs nœuds |

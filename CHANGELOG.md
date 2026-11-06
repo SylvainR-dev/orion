@@ -43,304 +43,304 @@
 * **infra:** Makefile up/down/install et playbook k3s pour l'instance Orion ([96887d5](https://github.com/SylvainR-dev/orion/commit/96887d5070136e328be40cf4204b08b9c45acc2b))
 * **infra:** migre EKS vers EC2+k3s (terraform, ansible, helm, gitignore) ([3a6c8f9](https://github.com/SylvainR-dev/orion/commit/3a6c8f9daaabc012e177166b447749d9fb8dadd6))
 
-## [1.18.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.18.0...v1.18.1) (2026-08-05)
+## [1.18.1](https://github.com/SylvainR-dev/orion/compare/v1.18.0...v1.18.1) (2026-08-05)
 
 
 ### Bug Fixes
 
-* **ci:** revient à --atomic (compat Helm CI) et ajoute rebase avant push dans export-dashboards ([4228b28](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/4228b28fad31375de5e05bf8572b9adb28dff2db))
+* **ci:** revient à --atomic (compat Helm CI) et ajoute rebase avant push dans export-dashboards ([4228b28](https://github.com/SylvainR-dev/orion/commit/4228b28fad31375de5e05bf8572b9adb28dff2db))
 
-# [1.18.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.17.1...v1.18.0) (2026-08-05)
+# [1.18.0](https://github.com/SylvainR-dev/orion/compare/v1.17.1...v1.18.0) (2026-08-05)
 
 
 ### Features
 
-* **backup:** ajoute le script de snapshot du state Terraform et documente la stratégie de sauvegarde ([ee8bc4b](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/ee8bc4bf549a54f25e2139ea8ca494f576f5f2a7))
+* **backup:** ajoute le script de snapshot du state Terraform et documente la stratégie de sauvegarde ([ee8bc4b](https://github.com/SylvainR-dev/orion/commit/ee8bc4bf549a54f25e2139ea8ca494f576f5f2a7))
 
-## [1.17.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.17.0...v1.17.1) (2026-08-05)
+## [1.17.1](https://github.com/SylvainR-dev/orion/compare/v1.17.0...v1.17.1) (2026-08-05)
 
 
 ### Bug Fixes
 
-* **ci:** remplace --atomic (deprecated) par --rollback-on-failure + docs: documente le mécanisme de rollback testé ([7a1d85d](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/7a1d85d8aeab693bf752b7d6b9c47a42abc9a83c))
+* **ci:** remplace --atomic (deprecated) par --rollback-on-failure + docs: documente le mécanisme de rollback testé ([7a1d85d](https://github.com/SylvainR-dev/orion/commit/7a1d85d8aeab693bf752b7d6b9c47a42abc9a83c))
 
-# [1.17.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.4...v1.17.0) (2026-08-05)
+# [1.17.0](https://github.com/SylvainR-dev/orion/compare/v1.16.4...v1.17.0) (2026-08-05)
 
 
 ### Features
 
-* **ci:** ajoute --atomic au déploiement Helm pour un rollback automatique en cas d'échec ([8536f14](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/8536f1494274d92ac581319eccfa9bcce3d3542c))
+* **ci:** ajoute --atomic au déploiement Helm pour un rollback automatique en cas d'échec ([8536f14](https://github.com/SylvainR-dev/orion/commit/8536f1494274d92ac581319eccfa9bcce3d3542c))
 
-## [1.16.4](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.3...v1.16.4) (2026-08-04)
-
-
-### Bug Fixes
-
-* **back:** remplace la lambda par une référence de méthode Person::getId (code smell SonarQube) ([d87a092](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/d87a09294acb6085de3efe802bff6eb41d7fbc2a))
-* **ci:** corrige la génération du slug des dashboards Grafana (gère les / dans les titres) ([662a9fe](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/662a9fe9fddeb73f9889b038b43364ed093b2a86))
-* **front:** réapplique la migration HAL->REST des services et composants (routes /api/*, personIds) ([0dce47b](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/0dce47b66d8a47756ebfdc9917b40672f519bf83))
-
-## [1.16.3](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.2...v1.16.3) (2026-08-04)
+## [1.16.4](https://github.com/SylvainR-dev/orion/compare/v1.16.3...v1.16.4) (2026-08-04)
 
 
 ### Bug Fixes
 
-* **ci:** supprime le job pushgateway dupliqué dans monitoring-deploy ([dcb7e43](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/dcb7e436c9bcedced3bf8212ff995bb9ff446205))
-* **terraform:** passe cluster_version de 1.30 à 1.34 (1.30 hors support étendu EKS) ([dfba0bb](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/dfba0bbc597ea8565fe71c8389c22c4d683d21f5))
+* **back:** remplace la lambda par une référence de méthode Person::getId (code smell SonarQube) ([d87a092](https://github.com/SylvainR-dev/orion/commit/d87a09294acb6085de3efe802bff6eb41d7fbc2a))
+* **ci:** corrige la génération du slug des dashboards Grafana (gère les / dans les titres) ([662a9fe](https://github.com/SylvainR-dev/orion/commit/662a9fe9fddeb73f9889b038b43364ed093b2a86))
+* **front:** réapplique la migration HAL->REST des services et composants (routes /api/*, personIds) ([0dce47b](https://github.com/SylvainR-dev/orion/commit/0dce47b66d8a47756ebfdc9917b40672f519bf83))
 
-## [1.16.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.1...v1.16.2) (2026-07-29)
-
-
-### Bug Fixes
-
-* **monitoring:** augmente les limites CPU/mémoire de Grafana pour réduire la contention SQLite ([d86eea6](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/d86eea67b830035d7c69f69ecef22ee8d9ee445c))
-
-## [1.16.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.16.0...v1.16.1) (2026-07-29)
+## [1.16.3](https://github.com/SylvainR-dev/orion/compare/v1.16.2...v1.16.3) (2026-08-04)
 
 
 ### Bug Fixes
 
-* **monitoring:** ajoute le label release au ServiceMonitor du Pushgateway pour qu'il soit scrapé par Prometheus ([15e1361](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/15e13615d264897ce035f66c14259833264f9b26))
+* **ci:** supprime le job pushgateway dupliqué dans monitoring-deploy ([dcb7e43](https://github.com/SylvainR-dev/orion/commit/dcb7e436c9bcedced3bf8212ff995bb9ff446205))
+* **terraform:** passe cluster_version de 1.30 à 1.34 (1.30 hors support étendu EKS) ([dfba0bb](https://github.com/SylvainR-dev/orion/commit/dfba0bbc597ea8565fe71c8389c22c4d683d21f5))
 
-# [1.16.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.15.2...v1.16.0) (2026-07-29)
+## [1.16.2](https://github.com/SylvainR-dev/orion/compare/v1.16.1...v1.16.2) (2026-07-29)
+
+
+### Bug Fixes
+
+* **monitoring:** augmente les limites CPU/mémoire de Grafana pour réduire la contention SQLite ([d86eea6](https://github.com/SylvainR-dev/orion/commit/d86eea67b830035d7c69f69ecef22ee8d9ee445c))
+
+## [1.16.1](https://github.com/SylvainR-dev/orion/compare/v1.16.0...v1.16.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* **monitoring:** ajoute le label release au ServiceMonitor du Pushgateway pour qu'il soit scrapé par Prometheus ([15e1361](https://github.com/SylvainR-dev/orion/commit/15e13615d264897ce035f66c14259833264f9b26))
+
+# [1.16.0](https://github.com/SylvainR-dev/orion/compare/v1.15.2...v1.16.0) (2026-07-29)
 
 
 ### Features
 
-* **monitoring:** ajoute le Pushgateway Prometheus et le job de calcul des métriques DORA ([e31e9e1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/e31e9e1970be6c38eb1d27580e0c1694e79f22c9))
-* **terraform:** active le mode CPU unlimited sur le node group EKS ([86621b4](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/86621b4e3eef46346c48483f0784e79a785e1017))
+* **monitoring:** ajoute le Pushgateway Prometheus et le job de calcul des métriques DORA ([e31e9e1](https://github.com/SylvainR-dev/orion/commit/e31e9e1970be6c38eb1d27580e0c1694e79f22c9))
+* **terraform:** active le mode CPU unlimited sur le node group EKS ([86621b4](https://github.com/SylvainR-dev/orion/commit/86621b4e3eef46346c48483f0784e79a785e1017))
 
-## [1.15.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.15.1...v1.15.2) (2026-07-28)
-
-
-### Bug Fixes
-
-* **helm:** corrige l'indentation grafana.sidecar.datasources dans loki-stack-values ([dc20961](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/dc209619b1dafe3c17a78fbc6dc4cfadf2c0794e))
-
-## [1.15.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.15.0...v1.15.1) (2026-07-28)
+## [1.15.2](https://github.com/SylvainR-dev/orion/compare/v1.15.1...v1.15.2) (2026-07-28)
 
 
 ### Bug Fixes
 
-* **ci:** ajoute workflow rules pour eviter le doublon de pipelines ([db8c246](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/db8c24674f5054d2f0314361a23dd723308815c1))
+* **helm:** corrige l'indentation grafana.sidecar.datasources dans loki-stack-values ([dc20961](https://github.com/SylvainR-dev/orion/commit/dc209619b1dafe3c17a78fbc6dc4cfadf2c0794e))
 
-# [1.15.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.3...v1.15.0) (2026-07-28)
+## [1.15.1](https://github.com/SylvainR-dev/orion/compare/v1.15.0...v1.15.1) (2026-07-28)
 
 
 ### Bug Fixes
 
-* **ci:** ajoute rules explicites sur test-front/test-back pour les pipelines de MR ([94bd39f](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/94bd39f9359ab64cef902d14c64c8cb8c6f8298d))
-* **ci:** retire terraform-plan des pipelines de MR ([7e9558c](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/7e9558c165c333f8d104e3c25244c63bcbe36020))
-* corrige CascadeType.ALL sur Organization.persons (ConcurrentModificationException a la suppression) ([c9c9544](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/c9c95444bc8444b28fe72023ef3991047c7866fe))
+* **ci:** ajoute workflow rules pour eviter le doublon de pipelines ([db8c246](https://github.com/SylvainR-dev/orion/commit/db8c24674f5054d2f0314361a23dd723308815c1))
+
+# [1.15.0](https://github.com/SylvainR-dev/orion/compare/v1.14.3...v1.15.0) (2026-07-28)
+
+
+### Bug Fixes
+
+* **ci:** ajoute rules explicites sur test-front/test-back pour les pipelines de MR ([94bd39f](https://github.com/SylvainR-dev/orion/commit/94bd39f9359ab64cef902d14c64c8cb8c6f8298d))
+* **ci:** retire terraform-plan des pipelines de MR ([7e9558c](https://github.com/SylvainR-dev/orion/commit/7e9558c165c333f8d104e3c25244c63bcbe36020))
+* corrige CascadeType.ALL sur Organization.persons (ConcurrentModificationException a la suppression) ([c9c9544](https://github.com/SylvainR-dev/orion/commit/c9c95444bc8444b28fe72023ef3991047c7866fe))
 
 
 ### Features
 
-* ajoute controllers, GlobalExceptionHandler, CorsConfig; corrige InitialDataFixture; supprime SpringDataRestCustomization ([2ded518](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/2ded518d5696aca596dffe358a853097ed858386))
-* ajoute PersonService/OrganizationService, DTOs et exceptions metier ([94e5854](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/94e58549ba61879b1a09785cbed1d50eb4acd473))
+* ajoute controllers, GlobalExceptionHandler, CorsConfig; corrige InitialDataFixture; supprime SpringDataRestCustomization ([2ded518](https://github.com/SylvainR-dev/orion/commit/2ded518d5696aca596dffe358a853097ed858386))
+* ajoute PersonService/OrganizationService, DTOs et exceptions metier ([94e5854](https://github.com/SylvainR-dev/orion/commit/94e58549ba61879b1a09785cbed1d50eb4acd473))
 
-## [1.14.3](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.2...v1.14.3) (2026-07-28)
-
-
-### Bug Fixes
-
-* **ci:** met à jour loki-stack dans le job monitoring-deploy (résout le conflit de datasource par défaut) ([b65c43a](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/b65c43ad653fb42611937852816172b0277fd6ca))
-
-## [1.14.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.1...v1.14.2) (2026-07-28)
+## [1.14.3](https://github.com/SylvainR-dev/orion/compare/v1.14.2...v1.14.3) (2026-07-28)
 
 
 ### Bug Fixes
 
-* **monitoring:** résout le conflit de datasource par défaut (Loki/Prometheus) causant le crash de Grafana ([aadde78](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/aadde782daf37b4499f6e64180813e8ffbf56cd4))
-* **terraform:** passe node_desired_size à 3 (nécessaire pour héberger app + monitoring simultanément) ([3b4cf62](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/3b4cf62ddfec5196b11cc134d91a5d823957fc91))
+* **ci:** met à jour loki-stack dans le job monitoring-deploy (résout le conflit de datasource par défaut) ([b65c43a](https://github.com/SylvainR-dev/orion/commit/b65c43ad653fb42611937852816172b0277fd6ca))
 
-## [1.14.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.14.0...v1.14.1) (2026-07-28)
-
-
-### Bug Fixes
-
-* **ansible:** gère le StorageClass ebs-gp3 via le bootstrap plutôt qu'en kubectl manuel ([088e143](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/088e1435b4e9134762275fed516fc7fdb2fcb4d4))
-
-# [1.14.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.13.2...v1.14.0) (2026-07-24)
-
-
-### Features
-
-* **monitoring:** ajoute la stack PLG (Prometheus, Loki, Grafana) via Helm ([09edfac](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/09edfacef601fe7e9bca12aee7517a5dd7e276d2))
-
-## [1.13.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.13.1...v1.13.2) (2026-07-24)
+## [1.14.2](https://github.com/SylvainR-dev/orion/compare/v1.14.1...v1.14.2) (2026-07-28)
 
 
 ### Bug Fixes
 
-* **ci:** override l'entrypoint de l'image hashicorp/terraform ([9c3c3b6](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/9c3c3b66b107f82264f53ebc0bf4fb162c71af39))
+* **monitoring:** résout le conflit de datasource par défaut (Loki/Prometheus) causant le crash de Grafana ([aadde78](https://github.com/SylvainR-dev/orion/commit/aadde782daf37b4499f6e64180813e8ffbf56cd4))
+* **terraform:** passe node_desired_size à 3 (nécessaire pour héberger app + monitoring simultanément) ([3b4cf62](https://github.com/SylvainR-dev/orion/commit/3b4cf62ddfec5196b11cc134d91a5d823957fc91))
 
-## [1.13.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.13.0...v1.13.1) (2026-07-24)
-
-
-### Bug Fixes
-
-* **ci:** corrige la config Terraform pour fonctionner en CI ([02f8c17](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/02f8c17cbc43a4c2a24c8c1b77c5dedcbef02105))
-
-# [1.13.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.12.1...v1.13.0) (2026-07-24)
-
-
-### Features
-
-* **terraform:** migre le state vers un backend S3 distant ([92f7f8f](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/92f7f8fe9495f02f2ef2286d745da1b82a310ec8))
-
-## [1.12.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.12.0...v1.12.1) (2026-07-23)
+## [1.14.1](https://github.com/SylvainR-dev/orion/compare/v1.14.0...v1.14.1) (2026-07-28)
 
 
 ### Bug Fixes
 
-* **ci:** corrige la couverture de tests Jacoco/lcov pour SonarCloud (back+front) ([e84bab8](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/e84bab89645e182e46c37a8f7ef1ef3616f4b586))
+* **ansible:** gère le StorageClass ebs-gp3 via le bootstrap plutôt qu'en kubectl manuel ([088e143](https://github.com/SylvainR-dev/orion/commit/088e1435b4e9134762275fed516fc7fdb2fcb4d4))
 
-# [1.12.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.11.0...v1.12.0) (2026-07-22)
-
-
-### Features
-
-* **ci:** ajoute le job deploy via Helm sur EKS ([65f225c](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/65f225cc1e900e8a5f3bf35b872eff44e9b0b51f))
-
-# [1.11.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.10.0...v1.11.0) (2026-07-22)
+# [1.14.0](https://github.com/SylvainR-dev/orion/compare/v1.13.2...v1.14.0) (2026-07-24)
 
 
 ### Features
 
-* **ansible:** playbook de bootstrap du cluster EKS ([e260cad](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/e260cad427d51c87fb130fafc2dc0e179055bfcb))
+* **monitoring:** ajoute la stack PLG (Prometheus, Loki, Grafana) via Helm ([09edfac](https://github.com/SylvainR-dev/orion/commit/09edfacef601fe7e9bca12aee7517a5dd7e276d2))
 
-# [1.10.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.9.0...v1.10.0) (2026-07-22)
-
-
-### Features
-
-* **helm:** ajoute le chart Helm pour front/back sur EKS ([f854c8b](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/f854c8b41f09a368623115d04ff3cc9d40196f49))
-
-# [1.9.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.8.0...v1.9.0) (2026-07-22)
-
-
-### Features
-
-* **k8s:** déploie front/back sur EKS via manifests Kubernetes bruts ([4cf3257](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/4cf3257797a22a9d0fd364ed4b615bf9b8c8fbfa))
-
-# [1.8.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.7.0...v1.8.0) (2026-07-21)
-
-
-### Features
-
-* **terraform:** provisionne le cluster EKS via Terraform ([ef31241](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/ef31241d97d7354668724e25eb5f4e848832f931))
-
-# [1.7.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.6.0...v1.7.0) (2026-07-20)
-
-
-### Features
-
-* **docker:** ajoute docker-compose de test local et corrige l'auto-HTTPS du Caddyfile ([3e44eb8](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/3e44eb83e252d6a41bae60a616239dcc9bc9d766))
-
-# [1.6.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.5.2...v1.6.0) (2026-07-17)
-
-
-### Features
-
-* ajout de la validation post-déploiement et du rollback automatique ([18647de](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/18647dea9cb412139ef0c90ddb1ba2ec070f0b0d))
-
-## [1.5.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.5.1...v1.5.2) (2026-07-17)
+## [1.13.2](https://github.com/SylvainR-dev/orion/compare/v1.13.1...v1.13.2) (2026-07-24)
 
 
 ### Bug Fixes
 
-* chemin absolu de la clé SSH pour le déploiement via le runner CI ([58fb462](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/58fb462b1c94ba3e429f0aab23c7a69cf5ce1e81))
+* **ci:** override l'entrypoint de l'image hashicorp/terraform ([9c3c3b6](https://github.com/SylvainR-dev/orion/commit/9c3c3b66b107f82264f53ebc0bf4fb162c71af39))
 
-## [1.5.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.5.0...v1.5.1) (2026-07-17)
+## [1.13.1](https://github.com/SylvainR-dev/orion/compare/v1.13.0...v1.13.1) (2026-07-24)
 
 
 ### Bug Fixes
 
-* correction des noms de variables pour l'authentification registre dans le job deploy ([be80eb9](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/be80eb9813fc510bbd56013c3028946efedb08e7))
+* **ci:** corrige la config Terraform pour fonctionner en CI ([02f8c17](https://github.com/SylvainR-dev/orion/commit/02f8c17cbc43a4c2a24c8c1b77c5dedcbef02105))
 
-# [1.5.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.5...v1.5.0) (2026-07-17)
+# [1.13.0](https://github.com/SylvainR-dev/orion/compare/v1.12.1...v1.13.0) (2026-07-24)
 
 
 ### Features
 
-* ajout du déploiement automatisé via Ansible sur l'environnement de démonstration ([0d129be](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/0d129be8352bc68c54578d8f16e7665641545230))
+* **terraform:** migre le state vers un backend S3 distant ([92f7f8f](https://github.com/SylvainR-dev/orion/commit/92f7f8fe9495f02f2ef2286d745da1b82a310ec8))
 
-## [1.4.5](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.4...v1.4.5) (2026-07-16)
-
-
-### Bug Fixes
-
-* mise à jour de Tomcat vers 10.1.55 pour corriger 3 CVE critiques additionnelles (CVE-2026-41293, CVE-2026-43512, CVE-2026-43515) ([8312981](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/83129810a8e5d0a1f6d36f4b3986bb42e30545c3))
-
-## [1.4.4](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.3...v1.4.4) (2026-07-16)
+## [1.12.1](https://github.com/SylvainR-dev/orion/compare/v1.12.0...v1.12.1) (2026-07-23)
 
 
 ### Bug Fixes
 
-* mise à jour de Tomcat embarqué pour corriger 4 CVE critiques (CVE-2025-24813, CVE-2026-41293, CVE-2026-43512, CVE-2026-43515) ([934cdfe](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/934cdfeb9c6a3cbb789b5b3a7dc6546c7d12063f))
+* **ci:** corrige la couverture de tests Jacoco/lcov pour SonarCloud (back+front) ([e84bab8](https://github.com/SylvainR-dev/orion/commit/e84bab89645e182e46c37a8f7ef1ef3616f4b586))
 
-## [1.4.3](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.2...v1.4.3) (2026-07-15)
-
-
-### Bug Fixes
-
-* utilisation de l'image Docker officielle Trivy pour fiabiliser le scan ([1871629](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/1871629f5c88077ffb268a99b0794c8021fdb716))
-
-## [1.4.2](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.1...v1.4.2) (2026-07-15)
-
-
-### Bug Fixes
-
-* correction du nom du binaire Trivy (convention linux-amd64) ([38e7056](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/38e705611c934dac82a90f022251fe5918105466))
-
-## [1.4.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.4.0...v1.4.1) (2026-07-15)
-
-
-### Bug Fixes
-
-* téléchargement direct du binaire Trivy pour fiabiliser l'installation ([e4ebddb](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/e4ebddb3fd8bd807bf179387a88d41e388408955))
-
-# [1.4.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.3.0...v1.4.0) (2026-07-15)
+# [1.12.0](https://github.com/SylvainR-dev/orion/compare/v1.11.0...v1.12.0) (2026-07-22)
 
 
 ### Features
 
-* ajout du scan de sécurité Trivy avant publication des images ([f31c63a](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/f31c63a3ff0ccb6e3518c34bf35279b24c23e185))
+* **ci:** ajoute le job deploy via Helm sur EKS ([65f225c](https://github.com/SylvainR-dev/orion/commit/65f225cc1e900e8a5f3bf35b872eff44e9b0b51f))
 
-# [1.3.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.2.1...v1.3.0) (2026-07-15)
+# [1.11.0](https://github.com/SylvainR-dev/orion/compare/v1.10.0...v1.11.0) (2026-07-22)
 
 
 ### Features
 
-* intégration de SonarQube Cloud pour l'analyse du frontend ([aa4f26c](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/aa4f26cce9acc10d85216b55e86b698775d6f4ae))
+* **ansible:** playbook de bootstrap du cluster EKS ([e260cad](https://github.com/SylvainR-dev/orion/commit/e260cad427d51c87fb130fafc2dc0e179055bfcb))
 
-## [1.2.1](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.2.0...v1.2.1) (2026-07-15)
+# [1.10.0](https://github.com/SylvainR-dev/orion/compare/v1.9.0...v1.10.0) (2026-07-22)
+
+
+### Features
+
+* **helm:** ajoute le chart Helm pour front/back sur EKS ([f854c8b](https://github.com/SylvainR-dev/orion/commit/f854c8b41f09a368623115d04ff3cc9d40196f49))
+
+# [1.9.0](https://github.com/SylvainR-dev/orion/compare/v1.8.0...v1.9.0) (2026-07-22)
+
+
+### Features
+
+* **k8s:** déploie front/back sur EKS via manifests Kubernetes bruts ([4cf3257](https://github.com/SylvainR-dev/orion/commit/4cf3257797a22a9d0fd364ed4b615bf9b8c8fbfa))
+
+# [1.8.0](https://github.com/SylvainR-dev/orion/compare/v1.7.0...v1.8.0) (2026-07-21)
+
+
+### Features
+
+* **terraform:** provisionne le cluster EKS via Terraform ([ef31241](https://github.com/SylvainR-dev/orion/commit/ef31241d97d7354668724e25eb5f4e848832f931))
+
+# [1.7.0](https://github.com/SylvainR-dev/orion/compare/v1.6.0...v1.7.0) (2026-07-20)
+
+
+### Features
+
+* **docker:** ajoute docker-compose de test local et corrige l'auto-HTTPS du Caddyfile ([3e44eb8](https://github.com/SylvainR-dev/orion/commit/3e44eb83e252d6a41bae60a616239dcc9bc9d766))
+
+# [1.6.0](https://github.com/SylvainR-dev/orion/compare/v1.5.2...v1.6.0) (2026-07-17)
+
+
+### Features
+
+* ajout de la validation post-déploiement et du rollback automatique ([18647de](https://github.com/SylvainR-dev/orion/commit/18647dea9cb412139ef0c90ddb1ba2ec070f0b0d))
+
+## [1.5.2](https://github.com/SylvainR-dev/orion/compare/v1.5.1...v1.5.2) (2026-07-17)
 
 
 ### Bug Fixes
 
-* correction de la commande gradle pour le job SonarQube (usage du wrapper) ([dfa9a4e](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/dfa9a4e6fb5f7a4f229f6b9f21e16aea56921acc))
+* chemin absolu de la clé SSH pour le déploiement via le runner CI ([58fb462](https://github.com/SylvainR-dev/orion/commit/58fb462b1c94ba3e429f0aab23c7a69cf5ce1e81))
 
-# [1.2.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.1.0...v1.2.0) (2026-07-15)
+## [1.5.1](https://github.com/SylvainR-dev/orion/compare/v1.5.0...v1.5.1) (2026-07-17)
+
+
+### Bug Fixes
+
+* correction des noms de variables pour l'authentification registre dans le job deploy ([be80eb9](https://github.com/SylvainR-dev/orion/commit/be80eb9813fc510bbd56013c3028946efedb08e7))
+
+# [1.5.0](https://github.com/SylvainR-dev/orion/compare/v1.4.5...v1.5.0) (2026-07-17)
 
 
 ### Features
 
-* intégration de SonarQube Cloud pour l'analyse du backend ([ddc0900](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/ddc09009dee43f4d754c78c4b8b1868c6e8442c0))
+* ajout du déploiement automatisé via Ansible sur l'environnement de démonstration ([0d129be](https://github.com/SylvainR-dev/orion/commit/0d129be8352bc68c54578d8f16e7665641545230))
 
-# [1.1.0](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/compare/v1.0.0...v1.1.0) (2026-07-15)
+## [1.4.5](https://github.com/SylvainR-dev/orion/compare/v1.4.4...v1.4.5) (2026-07-16)
+
+
+### Bug Fixes
+
+* mise à jour de Tomcat vers 10.1.55 pour corriger 3 CVE critiques additionnelles (CVE-2026-41293, CVE-2026-43512, CVE-2026-43515) ([8312981](https://github.com/SylvainR-dev/orion/commit/83129810a8e5d0a1f6d36f4b3986bb42e30545c3))
+
+## [1.4.4](https://github.com/SylvainR-dev/orion/compare/v1.4.3...v1.4.4) (2026-07-16)
+
+
+### Bug Fixes
+
+* mise à jour de Tomcat embarqué pour corriger 4 CVE critiques (CVE-2025-24813, CVE-2026-41293, CVE-2026-43512, CVE-2026-43515) ([934cdfe](https://github.com/SylvainR-dev/orion/commit/934cdfeb9c6a3cbb789b5b3a7dc6546c7d12063f))
+
+## [1.4.3](https://github.com/SylvainR-dev/orion/compare/v1.4.2...v1.4.3) (2026-07-15)
+
+
+### Bug Fixes
+
+* utilisation de l'image Docker officielle Trivy pour fiabiliser le scan ([1871629](https://github.com/SylvainR-dev/orion/commit/1871629f5c88077ffb268a99b0794c8021fdb716))
+
+## [1.4.2](https://github.com/SylvainR-dev/orion/compare/v1.4.1...v1.4.2) (2026-07-15)
+
+
+### Bug Fixes
+
+* correction du nom du binaire Trivy (convention linux-amd64) ([38e7056](https://github.com/SylvainR-dev/orion/commit/38e705611c934dac82a90f022251fe5918105466))
+
+## [1.4.1](https://github.com/SylvainR-dev/orion/compare/v1.4.0...v1.4.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* téléchargement direct du binaire Trivy pour fiabiliser l'installation ([e4ebddb](https://github.com/SylvainR-dev/orion/commit/e4ebddb3fd8bd807bf179387a88d41e388408955))
+
+# [1.4.0](https://github.com/SylvainR-dev/orion/compare/v1.3.0...v1.4.0) (2026-07-15)
 
 
 ### Features
 
-* ajout du build et de la publication des images Docker vers le registre GitLab ([1e2ea7a](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/1e2ea7a13b286437bfae2a9972d46dce5473a548))
+* ajout du scan de sécurité Trivy avant publication des images ([f31c63a](https://github.com/SylvainR-dev/orion/commit/f31c63a3ff0ccb6e3518c34bf35279b24c23e185))
+
+# [1.3.0](https://github.com/SylvainR-dev/orion/compare/v1.2.1...v1.3.0) (2026-07-15)
+
+
+### Features
+
+* intégration de SonarQube Cloud pour l'analyse du frontend ([aa4f26c](https://github.com/SylvainR-dev/orion/commit/aa4f26cce9acc10d85216b55e86b698775d6f4ae))
+
+## [1.2.1](https://github.com/SylvainR-dev/orion/compare/v1.2.0...v1.2.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* correction de la commande gradle pour le job SonarQube (usage du wrapper) ([dfa9a4e](https://github.com/SylvainR-dev/orion/commit/dfa9a4e6fb5f7a4f229f6b9f21e16aea56921acc))
+
+# [1.2.0](https://github.com/SylvainR-dev/orion/compare/v1.1.0...v1.2.0) (2026-07-15)
+
+
+### Features
+
+* intégration de SonarQube Cloud pour l'analyse du backend ([ddc0900](https://github.com/SylvainR-dev/orion/commit/ddc09009dee43f4d754c78c4b8b1868c6e8442c0))
+
+# [1.1.0](https://github.com/SylvainR-dev/orion/compare/v1.0.0...v1.1.0) (2026-07-15)
+
+
+### Features
+
+* ajout du build et de la publication des images Docker vers le registre GitLab ([1e2ea7a](https://github.com/SylvainR-dev/orion/commit/1e2ea7a13b286437bfae2a9972d46dce5473a548))
 
 # 1.0.0 (2026-07-15)
 
 
 ### Features
 
-* add docker images build instructions ([4298760](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/42987602d3f33e1dfe1d24c58df136a5df949aa8))
-* initial commit ([0b1e7fc](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/0b1e7fcbe03c67006cd27e4f293bfed40c923b18))
-* mise en place du versioning automatique avec semantic-release ([8ad67bc](https://gitlab.com/sylvainr-dev-group/projet-6-demarche-devops/commit/8ad67bc1b290efe8257808f85e30c8996c133a91))
+* add docker images build instructions ([4298760](https://github.com/SylvainR-dev/orion/commit/42987602d3f33e1dfe1d24c58df136a5df949aa8))
+* initial commit ([0b1e7fc](https://github.com/SylvainR-dev/orion/commit/0b1e7fcbe03c67006cd27e4f293bfed40c923b18))
+* mise en place du versioning automatique avec semantic-release ([8ad67bc](https://github.com/SylvainR-dev/orion/commit/8ad67bc1b290efe8257808f85e30c8996c133a91))

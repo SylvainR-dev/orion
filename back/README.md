@@ -1,24 +1,32 @@
 # MicroCRM — Backend
 
-API REST du CRM d'Orion, développée en Spring Boot. Fournit la gestion des personnes (`Person`) et des organisations (`Organization`), avec leur relation de rattachement.
+API REST du CRM d'Orion, développée avec Spring Boot. Elle gère des personnes (`Person`) et des organisations (`Organization`), ainsi que leur rattachement.
+
+## Historique et évolution
+
+Ce backend est arrivé avec l'exercice : une application Spring Boot avec Gradle, HyperSQL et JUnit, que l'énoncé me demandait d'industrialiser. En lisant son code, j'ai vu qu'il n'avait en fait aucune couche applicative. Il utilisait Spring Data REST : les repositories JPA étaient exposés tels quels en HTTP, sans contrôleur, sans service et sans DTO. C'est rapide pour faire un prototype, mais cela posait des problèmes de fond : aucune logique métier ne pouvait exister, le modèle de données était exposé directement au client, aucune entrée n'était validée, et le CORS était ouvert à tous les domaines, avec `DELETE` autorisé sur toutes les routes et sans authentification.
+
+Avant de tout reprendre, j'ai vérifié dans les documents du projet que Spring Data REST n'était pas une exigence : seuls Spring Boot, Gradle, JUnit, HyperSQL et SonarQube étaient imposés. J'ai donc décidé de refondre le backend en architecture classique **Controller / Service / Repository**, avec des DTO validés. Je l'ai fait sur une branche dédiée, en commits courts, pour pouvoir revenir en arrière à tout moment. Pendant cette refonte, j'ai corrigé des problèmes que je n'avais pas vus d'abord : une relation `@ManyToMany` mise à jour d'un seul côté, une `NullPointerException` possible, des dates en `java.util.Date`, et surtout une cascade JPA qui supprimait les personnes en même temps que leur organisation (c'est un test d'intégration qui me l'a révélé).
+
+Depuis, le backend a surtout évolué par la sécurité : Trivy a signalé des failles critiques dans la version de Tomcat fournie par Spring Boot, que je corrige en fixant `ext['tomcat.version']` dans `build.gradle`, et une faille Spring que j'ai dû ignorer avec une justification (voir [`../SECURITY.md`](../SECURITY.md)). Le frontend a été adapté aux nouvelles routes `/api/...`.
 
 ## Stack technique
 
 | Composant | Technologie |
 |---|---|
-| Langage / Framework | Java, Spring Boot 3.2.5 |
-| Build | Gradle 8.7 (wrapper inclus, pas besoin d'installer Gradle) |
-| Base de données | HyperSQL (HSQLDB), embarquée en mémoire — pas de serveur externe requis |
+| Langage / framework | Java, Spring Boot 3.2.5 |
+| Build | Gradle 8.7 (wrapper inclus, rien à installer) |
+| Base de données | HyperSQL (HSQLDB), embarquée en mémoire, sans serveur externe |
 | Tests | JUnit 5, Mockito, `@DataJpaTest`, `@WebMvcTest` |
-| Couverture de code | JaCoCo |
+| Couverture | JaCoCo |
 | Analyse statique | SonarCloud |
 
 ## Prérequis
 
-- **JDK 21** (ou version compatible Spring Boot 3.2.5)
-- Aucune base de données à installer — HyperSQL est embarquée
+- **JDK 17** : c'est la version de compilation du projet (`sourceCompatibility = '17'`), et celle que la CI utilise. L'image Docker, elle, exécute l'application avec un JRE 21.
+- Aucune base de données à installer : HyperSQL est embarquée.
 
-Le wrapper Gradle (`./gradlew`) télécharge automatiquement la bonne version de Gradle au premier lancement, aucune installation manuelle nécessaire.
+Le wrapper Gradle (`./gradlew`) télécharge la bonne version de Gradle au premier lancement.
 
 ## Lancer l'application en local
 
@@ -27,29 +35,28 @@ cd back
 ./gradlew bootRun
 ```
 
-L'API démarre sur **`http://localhost:8080`**.
-
-Vérification rapide :
+L'API démarre sur **`http://localhost:8080`**. Vérification rapide :
 
 ```bash
 curl http://localhost:8080/api/persons
 curl http://localhost:8080/api/organizations
 ```
 
+Au démarrage, `InitialDataFixture` insère un jeu de données de test.
+
 ## Architecture
 
-Le backend suit une architecture en couches classique :
-
 ```
-Controller (REST, DTOs) → Service (logique métier) → Repository (Spring Data JPA) → HyperSQL
+Controller (REST, DTO) → Service (logique métier) → Repository (Spring Data JPA) → HyperSQL
 ```
 
 Packages principaux :
-- `person/` — entité `Person`, `PersonController`, `PersonService`, `PersonRepository`, DTOs
-- `organization/` — entité `Organization`, `OrganizationController`, `OrganizationService`, `OrganizationRepository`, DTOs
-- `common/` — `GlobalExceptionHandler`, configuration CORS
 
-Documentation complète : voir [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+- `person/` : entité `Person`, `PersonController`, `PersonService`, `PersonRepository` et DTO
+- `organization/` : entité `Organization`, `OrganizationController`, `OrganizationService`, `OrganizationRepository` et DTO
+- `common/` : `GlobalExceptionHandler`, configuration CORS
+
+Détail et décisions : [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
 
 ## Endpoints principaux
 
@@ -68,60 +75,59 @@ Documentation complète : voir [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 | `POST` | `/api/organizations/{organizationId}/persons/{personId}` | Associer une personne à une organisation |
 | `DELETE` | `/api/organizations/{organizationId}/persons/{personId}` | Dissocier une personne d'une organisation |
 
+Les erreurs sont normalisées par `GlobalExceptionHandler` : 404 (introuvable), 409 (e-mail déjà utilisé) et 400 (validation).
+
 ## Lancer les tests
 
 ```bash
+cd back
 ./gradlew test
 ```
 
-Avec génération du rapport de couverture (déclenché automatiquement après les tests) :
-
-```bash
-./gradlew test jacocoTestReport
-```
-
-Rapport HTML consultable dans `build/reports/jacoco/test/html/index.html`.
-
-Couverture actuelle : **94 % instructions / 50 % branches**. Détail complet, ventilation par package et procédure de test : voir [`TESTING-back.md`](./TESTING-back.md).
+Le rapport de couverture JaCoCo est généré automatiquement après les tests. Rapport HTML : `back/build/reports/jacoco/test/html/index.html`. Détail de la stratégie et de la couverture : [`TESTING.md`](./TESTING.md).
 
 ## Analyse de code (SonarCloud)
 
 ```bash
+export SONAR_TOKEN=<votre-jeton>
+export SONAR_HOST_URL=https://sonarcloud.io
 ./gradlew sonar
 ```
 
-Nécessite les variables d'environnement `SONAR_TOKEN` et `SONAR_HOST_URL` (déjà configurées en CI/CD, à définir en local si besoin d'une analyse manuelle).
+En CI, c'est le job `sonarqube-back` qui le fait, avec le secret GitHub `SONAR_TOKEN`. Le projet est `sylvainr-dev_microcrm-backend`, dans l'organisation `sylvainr-dev`.
 
-## Build
+## Build et image Docker
 
 ```bash
-./gradlew build
+./gradlew build            # génère le jar dans build/libs/ (et rejoue les tests)
 ```
 
-Génère le `.jar` exécutable dans `build/libs/`.
-
-## Docker
-
-L'image backend fait partie d'un `Dockerfile` multi-stage unique à la racine du dépôt (stages `back-build` et `back`) :
+L'image du backend fait partie du `Dockerfile` multi-stage unique à la racine du dépôt :
 
 ```bash
 docker build --target back -t microcrm-back .
 ```
 
-Pour tester front + back ensemble en local sans dépendance à AWS, voir le `docker-compose.yml` à la racine du dépôt.
+La CI publie l'image sur GitHub Container Registry : `ghcr.io/sylvainr-dev/orion/back:<version>`. Pour tester le frontend et le backend ensemble en local, sans AWS, voir `docker-compose.yml` à la racine.
 
 ## Documentation complémentaire
 
 | Document | Contenu |
 |---|---|
-| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Architecture applicative détaillée, décisions techniques |
-| [`TESTING-back.md`](./TESTING-back.md) | Stratégie de tests, couverture, procédure complète |
-| [`PERF-back.md`](./PERF-back.md) | Dimensionnement, monitoring, limites de performance connues |
-| [`SECURITY.md`](./SECURITY.md) | Sécurité applicative, gestion des secrets, dette de sécurité |
+| [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | Architecture applicative et infrastructure |
+| [`TESTING.md`](./TESTING.md) | Stratégie de tests, couverture, procédure |
+| [`PERF-back.md`](./PERF-back.md) | Dimensionnement, supervision, limites de performance |
+| [`../SECURITY.md`](../SECURITY.md) | Sécurité applicative, secrets, dette de sécurité |
 
-## Points de vigilance connus
+## Points de vigilance
 
-- Base de données HyperSQL embarquée — non adaptée à un usage de production réel (pas de persistance externe, pas de réplication).
-- Absence de Spring Boot Actuator — pas de métriques applicatives exposées, pas d'authentification sur l'API à ce stade (voir `SECURITY.md`).
+- HyperSQL embarquée : les données disparaissent à chaque redémarrage du pod, ce n'est pas adapté à la production.
+- Pas de Spring Security : l'API n'est pas authentifiée (voir `../SECURITY.md`).
+- Pas de Spring Boot Actuator : aucune métrique applicative n'est exposée.
 
-Détail complet dans les documents ci-dessus.
+## Références
+
+- [Gradle](https://docs.gradle.org)
+- [Spring Boot Gradle Plugin 3.2.5](https://docs.spring.io/spring-boot/docs/3.2.5/gradle-plugin/reference/html/)
+- [Spring Web](https://docs.spring.io/spring-boot/docs/3.2.5/reference/htmlsingle/index.html#web)
+- [Spring Data JPA](https://docs.spring.io/spring-boot/docs/3.2.5/reference/htmlsingle/index.html#data.sql.jpa-and-spring-data)
